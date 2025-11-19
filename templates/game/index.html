@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[Your Game Title]</title>
+    <style>
+        /* Add your game styles here */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+        }
+
+        #gameContainer {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        /* Add your canvas styles here */
+        canvas {
+            border: 3px solid #333;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1>[Your Game Title]</h1>
+        <!-- Add your game UI elements here -->
+    </div>
+
+    <script>
+        // Add your game JavaScript here
+        // Remember: No POST requests, WebSockets, or EventSource allowed
+        // Only approved CDNs can be used
+
+        // Example game loop structure:
+        function gameLoop() {
+            // Game logic here
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>

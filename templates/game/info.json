@@ -1,0 +1,23 @@
+{
+  "name": "Your Game Title",
+  "description": "A brief description of your game (1-2 sentences)",
+  "model": "GPT-4o",
+  "version": "1.0.0",
+  "author": {
+    "name": "Your Name",
+    "url": "https://github.com/yourusername"
+  },
+  "tags": [
+    "tag1",
+    "tag2",
+    "tag3"
+  ],
+  "genre": "Arcade",
+  "difficulty": "Easy",
+  "controls": {
+    "type": "mouse",
+    "instructions": "Brief description of how to control the game"
+  },
+  "duration": "5-10 minutes",
+  "dateAdded": "2025-11-19"
+}

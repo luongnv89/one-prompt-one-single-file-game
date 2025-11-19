@@ -1,0 +1,25 @@
+{
+  "name": "Space Invaders",
+  "description": "Classic Space Invaders game. Control your spaceship, shoot at invading aliens, and defend Earth. Destroy all invaders to win!",
+  "model": "GPT-4o",
+  "version": "1.0.0",
+  "author": {
+    "name": "AI Assistant",
+    "url": null
+  },
+  "tags": [
+    "space",
+    "shooter",
+    "invaders",
+    "action",
+    "retro"
+  ],
+  "genre": "Action",
+  "difficulty": "Medium",
+  "controls": {
+    "type": "keyboard",
+    "instructions": "Use left/right arrow keys to move, spacebar to shoot"
+  },
+  "duration": "10-30 minutes",
+  "dateAdded": "2025-11-19"
+}

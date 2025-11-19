@@ -1,0 +1,25 @@
+{
+  "name": "Memory Match Game",
+  "description": "Test your memory with this fun card-matching game. Flip cards to find matching pairs of cute animal emojis. Multiple difficulty levels available!",
+  "model": "Llama 3.1",
+  "version": "1.0.0",
+  "author": {
+    "name": "AI Assistant",
+    "url": null
+  },
+  "tags": [
+    "memory",
+    "puzzle",
+    "cards",
+    "strategy",
+    "brain"
+  ],
+  "genre": "Puzzle",
+  "difficulty": "Easy",
+  "controls": {
+    "type": "mouse",
+    "instructions": "Click on cards to flip them and find matching pairs"
+  },
+  "duration": "5-15 minutes",
+  "dateAdded": "2025-11-19"
+}

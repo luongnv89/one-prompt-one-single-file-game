@@ -1,0 +1,25 @@
+{
+  "name": "Classic Pong",
+  "description": "The classic Pong game with smooth controls and AI opponent. Use W and S keys to move your paddle and compete against the computer.",
+  "model": "GPT-4o",
+  "version": "1.0.0",
+  "author": {
+    "name": "AI Assistant",
+    "url": null
+  },
+  "tags": [
+    "classic",
+    "arcade",
+    "paddle",
+    "retro",
+    "2-player-ai"
+  ],
+  "genre": "Arcade",
+  "difficulty": "Medium",
+  "controls": {
+    "type": "keyboard",
+    "instructions": "Press W to move paddle up, S to move paddle down"
+  },
+  "duration": "5-15 minutes",
+  "dateAdded": "2025-11-19"
+}

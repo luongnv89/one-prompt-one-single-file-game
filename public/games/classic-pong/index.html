@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic Pong</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: Arial, sans-serif;
+        }
+
+        #gameContainer {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        canvas {
+            background: #000;
+            border: 3px solid #fff;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .score {
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .controls {
+            color: white;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        .winner {
+            color: #00ff00;
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 20px;
+            animation: pulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 30px;
+            font-size: 18px;
+            background: #00ff00;
+            color: #000;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #00cc00;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1 style="color: white; margin-bottom: 10px;">🏓 Classic Pong</h1>
+        <div class="score">
+            <span id="playerScore">0</span> : <span id="aiScore">0</span>
+        </div>
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        <div id="winnerMessage" style="display: none;" class="winner"></div>
+        <div class="controls">
+            <p>Use <strong>W</strong> and <strong>S</strong> keys to move your paddle</p>
+            <p>First to <strong>5</strong> points wins!</p>
+        </div>
+        <button id="restartBtn" onclick="restartGame()" style="display: none;">Play Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const PADDLE_WIDTH = 10;
+        const PADDLE_HEIGHT = 100;
+        const BALL_SIZE = 10;
+        const PADDLE_SPEED = 7;
+        const BALL_SPEED = 5;
+
+        let playerPaddle = {
+            x: 20,
+            y: canvas.height / 2 - PADDLE_HEIGHT / 2
+        };
+
+        let aiPaddle = {
+            x: canvas.width - 30,
+            y: canvas.height / 2 - PADDLE_HEIGHT / 2
+        };
+
+        let ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            dx: BALL_SPEED,
+            dy: BALL_SPEED
+        };
+
+        let playerScore = 0;
+        let aiScore = 0;
+        let gameRunning = true;
+
+        const keys = {
+            w: false,
+            s: false
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'w' || e.key === 'W') keys.w = true;
+            if (e.key === 's' || e.key === 'S') keys.s = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'w' || e.key === 'W') keys.w = false;
+            if (e.key === 's' || e.key === 'S') keys.s = false;
+        });
+
+        function drawPaddle(paddle) {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(paddle.x, paddle.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+        }
+
+        function drawBall() {
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, BALL_SIZE, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawNet() {
+            ctx.strokeStyle = '#fff';
+            ctx.setLineDash([10, 15]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function updatePlayerPaddle() {
+            if (keys.w && playerPaddle.y > 0) {
+                playerPaddle.y -= PADDLE_SPEED;
+            }
+            if (keys.s && playerPaddle.y < canvas.height - PADDLE_HEIGHT) {
+                playerPaddle.y += PADDLE_SPEED;
+            }
+        }
+
+        function updateAIPaddle() {
+            const paddleCenter = aiPaddle.y + PADDLE_HEIGHT / 2;
+            if (paddleCenter < ball.y - 10) {
+                aiPaddle.y += PADDLE_SPEED * 0.95;
+            } else if (paddleCenter > ball.y + 10) {
+                aiPaddle.y -= PADDLE_SPEED * 0.95;
+            }
+
+            if (aiPaddle.y < 0) aiPaddle.y = 0;
+            if (aiPaddle.y > canvas.height - PADDLE_HEIGHT) {
+                aiPaddle.y = canvas.height - PADDLE_HEIGHT;
+            }
+        }
+
+        function updateBall() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            if (ball.y <= 0 || ball.y >= canvas.height - BALL_SIZE) {
+                ball.dy *= -1;
+            }
+
+            if (ball.x <= playerPaddle.x + PADDLE_WIDTH) {
+                if (ball.y >= playerPaddle.y && ball.y <= playerPaddle.y + PADDLE_HEIGHT) {
+                    ball.dx = Math.abs(ball.dx);
+                    const hitPos = (ball.y - playerPaddle.y) / PADDLE_HEIGHT;
+                    ball.dy = (hitPos - 0.5) * 10;
+                }
+            }
+
+            if (ball.x >= aiPaddle.x) {
+                if (ball.y >= aiPaddle.y && ball.y <= aiPaddle.y + PADDLE_HEIGHT) {
+                    ball.dx = -Math.abs(ball.dx);
+                    const hitPos = (ball.y - aiPaddle.y) / PADDLE_HEIGHT;
+                    ball.dy = (hitPos - 0.5) * 10;
+                }
+            }
+
+            if (ball.x < 0) {
+                aiScore++;
+                document.getElementById('aiScore').textContent = aiScore;
+                resetBall();
+            } else if (ball.x > canvas.width) {
+                playerScore++;
+                document.getElementById('playerScore').textContent = playerScore;
+                resetBall();
+            }
+
+            checkWin();
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = BALL_SPEED * (Math.random() > 0.5 ? 1 : -1);
+            ball.dy = BALL_SPEED * (Math.random() - 0.5);
+        }
+
+        function checkWin() {
+            if (playerScore >= 5) {
+                gameRunning = false;
+                document.getElementById('winnerMessage').textContent = '🎉 You Win!';
+                document.getElementById('winnerMessage').style.display = 'block';
+                document.getElementById('restartBtn').style.display = 'block';
+            } else if (aiScore >= 5) {
+                gameRunning = false;
+                document.getElementById('winnerMessage').textContent = '🤖 AI Wins!';
+                document.getElementById('winnerMessage').style.display = 'block';
+                document.getElementById('restartBtn').style.display = 'block';
+            }
+        }
+
+        function restartGame() {
+            playerScore = 0;
+            aiScore = 0;
+            document.getElementById('playerScore').textContent = playerScore;
+            document.getElementById('aiScore').textContent = aiScore;
+            document.getElementById('winnerMessage').style.display = 'none';
+            document.getElementById('restartBtn').style.display = 'none';
+            gameRunning = true;
+            resetBall();
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawNet();
+
+            if (gameRunning) {
+                updatePlayerPaddle();
+                updateAIPaddle();
+                updateBall();
+            }
+
+            drawPaddle(playerPaddle);
+            drawPaddle(aiPaddle);
+            drawBall();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

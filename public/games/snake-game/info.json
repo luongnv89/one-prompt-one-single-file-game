@@ -1,0 +1,25 @@
+{
+  "name": "Snake Game",
+  "description": "The classic Snake game with high score tracking. Control the green snake with arrow keys, eat red food to grow longer, and avoid hitting walls or yourself.",
+  "model": "Claude 3.5 Sonnet",
+  "version": "1.0.0",
+  "author": {
+    "name": "AI Assistant",
+    "url": null
+  },
+  "tags": [
+    "classic",
+    "snake",
+    "arcade",
+    "retro",
+    "puzzle"
+  ],
+  "genre": "Arcade",
+  "difficulty": "Easy",
+  "controls": {
+    "type": "keyboard",
+    "instructions": "Use arrow keys to control the snake's direction"
+  },
+  "duration": "10-20 minutes",
+  "dateAdded": "2025-11-19"
+}

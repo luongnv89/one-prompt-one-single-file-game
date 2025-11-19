@@ -1,0 +1,145 @@
+{
+  "games": [
+    {
+      "slug": "classic-pong",
+      "name": "Classic Pong",
+      "description": "The classic Pong game with smooth controls and AI opponent. Use W and S keys to move your paddle and compete against the computer.",
+      "model": "GPT-4o",
+      "path": "/games/classic-pong/index.html",
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "AI Assistant",
+        "url": null
+      },
+      "tags": [
+        "classic",
+        "arcade",
+        "paddle",
+        "retro",
+        "2-player-ai"
+      ],
+      "genre": "Arcade",
+      "difficulty": "Medium",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Press W to move paddle up, S to move paddle down"
+      },
+      "duration": "5-15 minutes",
+      "dateAdded": "2025-11-19"
+    },
+    {
+      "slug": "memory-game",
+      "name": "Memory Match Game",
+      "description": "Test your memory with this fun card-matching game. Flip cards to find matching pairs of cute animal emojis. Multiple difficulty levels available!",
+      "model": "Llama 3.1",
+      "path": "/games/memory-game/index.html",
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "AI Assistant",
+        "url": null
+      },
+      "tags": [
+        "memory",
+        "puzzle",
+        "cards",
+        "strategy",
+        "brain"
+      ],
+      "genre": "Puzzle",
+      "difficulty": "Easy",
+      "controls": {
+        "type": "mouse",
+        "instructions": "Click on cards to flip them and find matching pairs"
+      },
+      "duration": "5-15 minutes",
+      "dateAdded": "2025-11-19"
+    },
+    {
+      "slug": "sample-game",
+      "name": "Click the Squares",
+      "description": "A simple arcade-style game where you click on red squares as they appear. A demonstration of AI-generated single-file game development.",
+      "model": "GPT-4o",
+      "path": "/games/sample-game/index.html",
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "AI Assistant",
+        "url": null
+      },
+      "tags": [
+        "arcade",
+        "clicker",
+        "simple",
+        "beginner"
+      ],
+      "genre": "Arcade",
+      "difficulty": "Easy",
+      "controls": {
+        "type": "mouse",
+        "instructions": "Click on the red squares to score points"
+      },
+      "duration": "5-10 minutes",
+      "dateAdded": "2025-11-18"
+    },
+    {
+      "slug": "snake-game",
+      "name": "Snake Game",
+      "description": "The classic Snake game with high score tracking. Control the green snake with arrow keys, eat red food to grow longer, and avoid hitting walls or yourself.",
+      "model": "Claude 3.5 Sonnet",
+      "path": "/games/snake-game/index.html",
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "AI Assistant",
+        "url": null
+      },
+      "tags": [
+        "classic",
+        "snake",
+        "arcade",
+        "retro",
+        "puzzle"
+      ],
+      "genre": "Arcade",
+      "difficulty": "Easy",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Use arrow keys to control the snake's direction"
+      },
+      "duration": "10-20 minutes",
+      "dateAdded": "2025-11-19"
+    },
+    {
+      "slug": "space-invaders",
+      "name": "Space Invaders",
+      "description": "Classic Space Invaders game. Control your spaceship, shoot at invading aliens, and defend Earth. Destroy all invaders to win!",
+      "model": "GPT-4o",
+      "path": "/games/space-invaders/index.html",
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "AI Assistant",
+        "url": null
+      },
+      "tags": [
+        "space",
+        "shooter",
+        "invaders",
+        "action",
+        "retro"
+      ],
+      "genre": "Action",
+      "difficulty": "Medium",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Use left/right arrow keys to move, spacebar to shoot"
+      },
+      "duration": "10-30 minutes",
+      "dateAdded": "2025-11-19"
+    }
+  ],
+  "generatedAt": "2025-11-19T07:36:46.849Z",
+  "count": 5
+}
