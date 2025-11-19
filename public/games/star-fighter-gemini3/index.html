@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SKY FIGHT: ULTIMATE DOGFIGHT</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            background-color: #111;
+            color: #fff;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            border: 4px solid #333;
+        }
+
+        canvas {
+            display: block;
+            background-color: #000;
+        }
+
+        /* CRT Scanline Effect */
+        #scanline {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="scanline"></div>
+</div>
+
+<script>
+/** 
+ * SKY FIGHT: ULTIMATE DOGFIGHT
+ * A Retro HTML5 Canvas Shooter
+ */
+
+// --- CONFIGURATION & ASSETS ---
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 600;
+const FPS = 60;
+
+// Story & Level Data
+const LEVELS = [
+    {
+        title: "LEVEL 1: DAWN OF WAR",
+        loc: "Mediterranean Sea",
+        briefing: "Capt. 'Viper' Kane, base is under attack! Defend the runway. Enemy drones inbound.",
+        bgColor: "#004488", // Sea Blue
+        weather: 'clear',
+        enemySpeed: 2,
+        spawnRate: 100,
+        bossName: "Heavy Drone Delta",
+        bossHp: 30
+    },
+    {
+        title: "LEVEL 2: THE FROZEN FRONT",
+        loc: "Arctic Circle",
+        briefing: "They have an airfield under the ice. Visibility is low. Watch out for stealth jets.",
+        bgColor: "#B0C4DE", // Icy Blue/Grey
+        weather: 'snow',
+        enemySpeed: 3,
+        spawnRate: 90,
+        bossName: "Stealth Phantom",
+        bossHp: 45
+    },
+    {
+        title: "LEVEL 3: CITY UNDER SIEGE",
+        loc: "Neo-Tokyo",
+        briefing: "Protect the city! Do not let them bomb the skyscrapers. Intercept the Laser Jet.",
+        bgColor: "#222244", // Dark City Night
+        weather: 'rain',
+        enemySpeed: 3.5,
+        spawnRate: 80,
+        bossName: "Proto-Laser X",
+        bossHp: 60
+    },
+    {
+        title: "LEVEL 4: DESERT FIRESTORM",
+        loc: "Middle East",
+        briefing: "Escort convoy. Sandstorms are messing with radar. The Command Ship is here.",
+        bgColor: "#D2691E", // Sand
+        weather: 'sand',
+        enemySpeed: 4,
+        spawnRate: 70,
+        bossName: "Aerial Fortress",
+        bossHp: 80
+    },
+    {
+        title: "LEVEL 5: DEEP SEA AMBUSH",
+        loc: "Pacific Ocean",
+        briefing: "Target: Enemy Carrier. Skim the waves. Avoid the EMP blasts.",
+        bgColor: "#000080", // Deep Navy
+        weather: 'storm',
+        enemySpeed: 4.5,
+        spawnRate: 60,
+        bossName: "Carrier Superjet",
+        bossHp: 100
+    },
+    {
+        title: "LEVEL 6: FINAL SHOWDOWN",
+        loc: "Mountain Fortress",
+        briefing: "This is it, Viper. The enemy Ace is waiting. End this war.",
+        bgColor: "#3B1E1E", // Dark Mountain
+        weather: 'ember',
+        enemySpeed: 6,
+        spawnRate: 50,
+        bossName: "Hypersonic Ace",
+        bossHp: 150
+    }
+];
+
+// --- AUDIO SYSTEM (Web Audio API) ---
+const AudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+    if (AudioCtx.state === 'suspended') AudioCtx.resume();
+    const osc = AudioCtx.createOscillator();
+    const gain = AudioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(AudioCtx.destination);
+
+    const now = AudioCtx.currentTime;
+    
+    if (type === 'shoot') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    } else if (type === 'hit') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.linearRampToValueAtTime(50, now + 0.1);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    } else if (type === 'explosion') {
+        // Noise buffer simulation for explosion
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(50, now);
+        osc.frequency.exponentialRampToValueAtTime(10, now + 0.3);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    } else if (type === 'powerup') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+    }
+}
+
+// --- GAME ENGINE ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// State Management
+const STATE = {
+    START: 0,
+    NAME_INPUT: 1,
+    INTRO: 2,
+    PLAYING: 3,
+    LEVEL_TRANSITION: 4,
+    PAUSE: 5,
+    GAME_OVER: 6,
+    VICTORY: 7
+};
+
+let currentState = STATE.START;
+let playerName = "";
+let score = 0;
+let levelIndex = 0;
+let keys = {};
+let particles = [];
+let enemies = [];
+let bullets = [];
+let player;
+let frameCount = 0;
+let levelProgress = 0; // 0 to 100, then boss
+let bossActive = false;
+let shakeAmount = 0;
+let highScores = JSON.parse(localStorage.getItem('skyFightHighScores')) || [];
+
+// Input Listeners
+window.addEventListener('keydown', e => {
+    keys[e.key] = true;
+    if (currentState === STATE.NAME_INPUT) handleNameInput(e);
+    if (currentState === STATE.START && e.key === 'Enter') currentState = STATE.NAME_INPUT;
+    if (currentState === STATE.GAME_OVER && e.key === 'Enter') resetGame();
+    if (currentState === STATE.VICTORY && e.key === 'Enter') resetGame();
+    if (currentState === STATE.PLAYING && (e.key === 'p' || e.key === 'P')) currentState = STATE.PAUSE;
+    else if (currentState === STATE.PAUSE && (e.key === 'p' || e.key === 'P')) currentState = STATE.PLAYING;
+    
+    // Level skip for debugging (optional)
+    // if (e.key === '9') nextLevel(); 
+});
+
+window.addEventListener('keyup', e => keys[e.key] = false);
+
+function handleNameInput(e) {
+    if (e.key === 'Enter' && playerName.length > 0) {
+        startLevel(0);
+    } else if (e.key === 'Backspace') {
+        playerName = playerName.slice(0, -1);
+    } else if (e.key.length === 1 && playerName.length < 10) {
+        playerName += e.key.toUpperCase();
+    }
+}
+
+// --- CLASSES ---
+
+class Player {
+    constructor() {
+        this.width = 30;
+        this.height = 40;
+        this.x = CANVAS_WIDTH / 2 - this.width / 2;
+        this.y = CANVAS_HEIGHT - 100;
+        this.speed = 5;
+        this.hp = 100;
+        this.maxHp = 100;
+        this.lastShot = 0;
+        this.shootDelay = 10; // Frames
+    }
+
+    update() {
+        let s = keys['Shift'] ? this.speed * 1.5 : this.speed;
+
+        if ((keys['ArrowLeft'] || keys['a']) && this.x > 0) this.x -= s;
+        if ((keys['ArrowRight'] || keys['d']) && this.x < CANVAS_WIDTH - this.width) this.x += s;
+        if ((keys['ArrowUp'] || keys['w']) && this.y > 0) this.y -= s;
+        if ((keys['ArrowDown'] || keys['s']) && this.y < CANVAS_HEIGHT - this.height) this.y += s;
+
+        if (keys[' '] && frameCount - this.lastShot > this.shootDelay) {
+            bullets.push(new Bullet(this.x + this.width / 2, this.y, -12, true));
+            this.lastShot = frameCount;
+            playSound('shoot');
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x + this.width/2, this.y + this.height/2);
+        // Banking effect
+        if (keys['ArrowLeft'] || keys['a']) ctx.rotate(-0.2);
+        if (keys['ArrowRight'] || keys['d']) ctx.rotate(0.2);
+
+        // Jet Body
+        ctx.fillStyle = '#ccc';
+        ctx.beginPath();
+        ctx.moveTo(0, -20);
+        ctx.lineTo(15, 20);
+        ctx.lineTo(0, 10);
+        ctx.lineTo(-15, 20);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cockpit
+        ctx.fillStyle = '#0ff';
+        ctx.beginPath();
+        ctx.moveTo(0, -5);
+        ctx.lineTo(5, 5);
+        ctx.lineTo(-5, 5);
+        ctx.fill();
+
+        // Thruster flame
+        if (keys['Shift']) {
+            ctx.fillStyle = `rgba(255, 100, 0, ${Math.random()})`;
+            ctx.beginPath();
+            ctx.moveTo(-5, 20);
+            ctx.lineTo(0, 35 + Math.random()*10);
+            ctx.lineTo(5, 20);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+}
+
+class Enemy {
+    constructor(x, y, type, isBoss = false) {
+        this.x = x;
+        this.y = y;
+        this.width = isBoss ? 80 : 30;
+        this.height = isBoss ? 80 : 30;
+        this.type = type;
+        this.isBoss = isBoss;
+        this.hp = isBoss ? LEVELS[levelIndex].bossHp : 10 + levelIndex * 2;
+        this.speedX = Math.random() * 2 - 1;
+        this.speedY = isBoss ? 1 : LEVELS[levelIndex].enemySpeed * (0.8 + Math.random()*0.4);
+        this.color = isBoss ? '#f00' : '#e66';
+        this.lastShot = 0;
+    }
+
+    update() {
+        this.y += this.speedY;
+        this.x += this.speedX;
+
+        // Boss Logic
+        if (this.isBoss) {
+            // Stay on screen
+            if (this.y > 100) this.speedY = 0; // Stop moving down
+            if (this.x < 50 || this.x > CANVAS_WIDTH - 50) this.speedX *= -1;
+            
+            // Boss attacks
+            if (frameCount % 60 === 0) {
+                // Radial shot or triple shot based on level
+                let shots = levelIndex >= 3 ? 3 : 1;
+                for(let i=0; i<shots; i++) {
+                    bullets.push(new Bullet(this.x + this.width/2, this.y + this.height, 6 + i, false, (i-1)*2));
+                }
+            }
+        } else {
+            // Regular enemy behavior
+            if (Math.random() < 0.005 + (levelIndex * 0.002)) {
+                bullets.push(new Bullet(this.x + this.width / 2, this.y + this.height, 5, false));
+            }
+        }
+    }
+
+    draw() {
+        ctx.fillStyle = this.color;
+        if (this.isBoss) {
+            ctx.beginPath();
+            ctx.moveTo(this.x + this.width/2, this.y + this.height);
+            ctx.lineTo(this.x + this.width, this.y);
+            ctx.lineTo(this.x, this.y);
+            ctx.closePath();
+            ctx.fill();
+            // Boss Core
+            ctx.fillStyle = `rgba(255, 255, 0, ${0.5 + Math.sin(frameCount * 0.1) * 0.5})`;
+            ctx.fillRect(this.x + this.width/2 - 10, this.y + 10, 20, 20);
+        } else {
+            ctx.beginPath();
+            ctx.moveTo(this.x + this.width/2, this.y + this.height);
+            ctx.lineTo(this.x + this.width, this.y);
+            ctx.lineTo(this.x + this.width/2, this.y + 10); // Inverted V
+            ctx.lineTo(this.x, this.y);
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+}
+
+class Bullet {
+    constructor(x, y, speed, isPlayer, xSpeed = 0) {
+        this.x = x;
+        this.y = y;
+        this.r = isPlayer ? 3 : 5;
+        this.speed = speed;
+        this.xSpeed = xSpeed;
+        this.isPlayer = isPlayer;
+        this.markedForDeletion = false;
+    }
+
+    update() {
+        this.y += this.speed;
+        this.x += this.xSpeed;
+        if (this.y < 0 || this.y > CANVAS_HEIGHT) this.markedForDeletion = true;
+    }
+
+    draw() {
+        ctx.fillStyle = this.isPlayer ? '#ff0' : '#f0f';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.size = Math.random() * 5 + 2;
+        this.speedX = Math.random() * 6 - 3;
+        this.speedY = Math.random() * 6 - 3;
+        this.color = color;
+        this.life = 1.0;
+    }
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.life -= 0.05;
+    }
+    draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+// --- CORE LOGIC ---
+
+function init() {
+    player = new Player();
+    score = 0;
+    levelIndex = 0;
+    resetLevelVars();
+    loop();
+}
+
+function resetLevelVars() {
+    bullets = [];
+    enemies = [];
+    particles = [];
+    levelProgress = 0;
+    bossActive = false;
+    player.x = CANVAS_WIDTH/2 - player.width/2;
+    player.y = CANVAS_HEIGHT - 100;
+}
+
+function startLevel(idx) {
+    levelIndex = idx;
+    currentState = STATE.LEVEL_TRANSITION;
+    resetLevelVars();
+    setTimeout(() => {
+        currentState = STATE.PLAYING;
+    }, 4000); // Briefing time
+}
+
+function nextLevel() {
+    levelIndex++;
+    if (levelIndex >= LEVELS.length) {
+        currentState = STATE.VICTORY;
+        saveHighScore();
+    } else {
+        score += 1000; // Level clear bonus
+        startLevel(levelIndex);
+    }
+}
+
+function createExplosion(x, y, color = '#fa0') {
+    for(let i=0; i<15; i++) {
+        particles.push(new Particle(x, y, color));
+    }
+}
+
+function screenShake(amount) {
+    shakeAmount = amount;
+}
+
+function saveHighScore() {
+    highScores.push({ name: playerName, score: score });
+    highScores.sort((a, b) => b.score - a.score);
+    highScores = highScores.slice(0, 10);
+    localStorage.setItem('skyFightHighScores', JSON.stringify(highScores));
+}
+
+function resetGame() {
+    currentState = STATE.START;
+    playerName = "";
+    keys = {};
+}
+
+// --- UPDATE & DRAW LOOP ---
+
+function update() {
+    if (currentState !== STATE.PLAYING) return;
+
+    if (shakeAmount > 0) shakeAmount -= 1;
+
+    player.update();
+
+    // Level Logic
+    if (!bossActive) {
+        levelProgress += 0.1; // Progress ticks up
+        if (levelProgress >= 100) {
+            bossActive = true;
+            enemies.push(new Enemy(CANVAS_WIDTH/2 - 40, -100, 'boss', true));
+        }
+        
+        // Spawn Enemies
+        if (frameCount % LEVELS[levelIndex].spawnRate === 0) {
+            enemies.push(new Enemy(Math.random() * (CANVAS_WIDTH - 40), -50, 'basic'));
+        }
+    }
+
+    // Update Entities
+    enemies.forEach((e, ei) => {
+        e.update();
+        // Collision Player vs Enemy
+        if (!e.isBoss && rectIntersect(player.x, player.y, player.width, player.height, e.x, e.y, e.width, e.height)) {
+             player.hp -= 10;
+             createExplosion(e.x, e.y);
+             playSound('hit');
+             enemies.splice(ei, 1);
+             screenShake(5);
+        }
+        // Boss Collision
+        if (e.isBoss && rectIntersect(player.x, player.y, player.width, player.height, e.x, e.y, e.width, e.height)) {
+            player.hp -= 1; // Constant damage on contact
+            screenShake(2);
+        }
+    });
+
+    bullets.forEach((b, bi) => {
+        b.update();
+        
+        // Bullet vs Enemy
+        if (b.isPlayer) {
+            enemies.forEach((e, ei) => {
+                if (rectIntersect(b.x, b.y, b.r, b.r, e.x, e.y, e.width, e.height)) {
+                    e.hp -= 10;
+                    b.markedForDeletion = true;
+                    createExplosion(b.x, b.y, '#fff');
+                    playSound('hit');
+                    if (e.hp <= 0) {
+                        enemies.splice(ei, 1);
+                        score += e.isBoss ? 500 : 50;
+                        createExplosion(e.x, e.y, '#f00');
+                        playSound('explosion');
+                        if (e.isBoss) {
+                            setTimeout(nextLevel, 2000); // Wait a bit after boss death
+                        }
+                    }
+                }
+            });
+        } else {
+            // Bullet vs Player
+            if (rectIntersect(b.x, b.y, b.r, b.r, player.x, player.y, player.width, player.height)) {
+                player.hp -= 10;
+                b.markedForDeletion = true;
+                screenShake(5);
+                playSound('hit');
+                createExplosion(player.x, player.y, '#f00');
+            }
+        }
+    });
+
+    bullets = bullets.filter(b => !b.markedForDeletion);
+    particles.forEach((p, i) => {
+        p.update();
+        if (p.life <= 0) particles.splice(i, 1);
+    });
+
+    // Game Over Check
+    if (player.hp <= 0) {
+        createExplosion(player.x, player.y, '#fff');
+        playSound('explosion');
+        saveHighScore();
+        currentState = STATE.GAME_OVER;
+    }
+}
+
+function draw() {
+    // Shake Effect
+    let dx = Math.random() * shakeAmount - shakeAmount/2;
+    let dy = Math.random() * shakeAmount - shakeAmount/2;
+    ctx.save();
+    ctx.translate(dx, dy);
+
+    // Background
+    if (currentState === STATE.PLAYING || currentState === STATE.LEVEL_TRANSITION) {
+        ctx.fillStyle = LEVELS[levelIndex].bgColor;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        drawWeather(LEVELS[levelIndex].weather);
+    } else {
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
+
+    if (currentState === STATE.START) drawStartScreen();
+    else if (currentState === STATE.NAME_INPUT) drawNameInput();
+    else if (currentState === STATE.LEVEL_TRANSITION) drawBriefing();
+    else if (currentState === STATE.PLAYING) {
+        player.draw();
+        enemies.forEach(e => e.draw());
+        bullets.forEach(b => b.draw());
+        particles.forEach(p => p.draw());
+        drawHUD();
+    }
+    else if (currentState === STATE.PAUSE) {
+        player.draw(); // Draw game behind
+        drawHUD();
+        drawOverlay("PAUSED", "Press P to Resume");
+    }
+    else if (currentState === STATE.GAME_OVER) drawOverlay("GAME OVER", `Score: ${score} | Press Enter`, "#f00");
+    else if (currentState === STATE.VICTORY) drawOverlay("MISSION ACCOMPLISHED", `Final Score: ${score} | Press Enter`, "#0f0");
+
+    ctx.restore();
+}
+
+function drawWeather(type) {
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    if (type === 'snow' || type === 'sand') {
+        for(let i=0; i<50; i++) {
+            let x = (Math.random() * CANVAS_WIDTH + frameCount * 2) % CANVAS_WIDTH;
+            let y = (Math.random() * CANVAS_HEIGHT + frameCount * 5) % CANVAS_HEIGHT;
+            ctx.fillRect(x, y, 2, 2);
+        }
+    }
+    if (type === 'sand') {
+        ctx.fillStyle = 'rgba(200, 150, 50, 0.2)';
+        ctx.fillRect(0,0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
+}
+
+function drawStartScreen() {
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = '40px "Press Start 2P"';
+    ctx.fillText("SKY FIGHT", CANVAS_WIDTH/2, 150);
+    ctx.font = '20px "Press Start 2P"';
+    ctx.fillText("ULTIMATE DOGFIGHT", CANVAS_WIDTH/2, 190);
+
+    ctx.fillStyle = '#ff0';
+    ctx.fillText("Press ENTER to Start", CANVAS_WIDTH/2, 300);
+
+    ctx.fillStyle = '#aaa';
+    ctx.font = '14px "Press Start 2P"';
+    ctx.fillText("HIGH SCORES", CANVAS_WIDTH/2, 380);
+    
+    highScores.slice(0, 5).forEach((hs, i) => {
+        ctx.fillText(`${hs.name} - ${hs.score}`, CANVAS_WIDTH/2, 410 + (i * 25));
+    });
+}
+
+function drawNameInput() {
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = '20px "Press Start 2P"';
+    ctx.fillText("ENTER PILOT NAME:", CANVAS_WIDTH/2, 200);
+    
+    ctx.fillStyle = '#0f0';
+    ctx.font = '30px "Press Start 2P"';
+    ctx.fillText(playerName + (frameCount % 30 < 15 ? "_" : ""), CANVAS_WIDTH/2, 250);
+
+    ctx.fillStyle = '#aaa';
+    ctx.font = '12px "Press Start 2P"';
+    ctx.fillText("Press Enter to Confirm", CANVAS_WIDTH/2, 400);
+}
+
+function drawBriefing() {
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillRect(50, 50, CANVAS_WIDTH-100, CANVAS_HEIGHT-100);
+    ctx.strokeStyle = '#fff';
+    ctx.strokeRect(50, 50, CANVAS_WIDTH-100, CANVAS_HEIGHT-100);
+
+    ctx.fillStyle = '#0f0';
+    ctx.textAlign = 'center';
+    ctx.font = '20px "Press Start 2P"';
+    ctx.fillText(LEVELS[levelIndex].title, CANVAS_WIDTH/2, 150);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px "Press Start 2P"';
+    let lines = getLines(ctx, LEVELS[levelIndex].briefing, CANVAS_WIDTH - 140);
+    lines.forEach((line, i) => {
+        ctx.fillText(line, CANVAS_WIDTH/2, 220 + (i * 25));
+    });
+
+    ctx.fillStyle = '#f00';
+    ctx.fillText(`BOSS: ${LEVELS[levelIndex].bossName}`, CANVAS_WIDTH/2, 400);
+    
+    ctx.fillStyle = '#ff0';
+    ctx.fillText("GET READY...", CANVAS_WIDTH/2, 500);
+}
+
+function drawHUD() {
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px "Press Start 2P"';
+    ctx.textAlign = 'left';
+    ctx.fillText(`SCORE: ${score}`, 20, 30);
+    ctx.fillText(`LEVEL: ${levelIndex + 1}`, 20, 50);
+    
+    // Health Bar
+    ctx.fillStyle = '#f00';
+    ctx.fillRect(20, CANVAS_HEIGHT - 30, 100, 10);
+    ctx.fillStyle = '#0f0';
+    ctx.fillRect(20, CANVAS_HEIGHT - 30, Math.max(0, (player.hp / player.maxHp) * 100), 10);
+    ctx.strokeStyle = '#fff';
+    ctx.strokeRect(20, CANVAS_HEIGHT - 30, 100, 10);
+    ctx.fillText("HULL INTEGRITY", 20, CANVAS_HEIGHT - 40);
+
+    // Boss Health
+    if (bossActive) {
+        let boss = enemies.find(e => e.isBoss);
+        if(boss) {
+            let maxHp = LEVELS[levelIndex].bossHp;
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#f00';
+            ctx.fillText("TARGET", CANVAS_WIDTH - 20, 30);
+            ctx.fillRect(CANVAS_WIDTH - 120, 40, 100, 10);
+            ctx.fillStyle = '#ff0';
+            ctx.fillRect(CANVAS_WIDTH - 120, 40, Math.max(0, (boss.hp / maxHp) * 100), 10);
+        }
+    }
+}
+
+function drawOverlay(title, sub, color="#fff") {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.font = '40px "Press Start 2P"';
+    ctx.fillText(title, CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - 20);
+    
+    ctx.fillStyle = '#fff';
+    ctx.font = '20px "Press Start 2P"';
+    ctx.fillText(sub, CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + 30);
+}
+
+// Helper for text wrapping
+function getLines(ctx, text, maxWidth) {
+    let words = text.split(" ");
+    let lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+        let word = words[i];
+        let width = ctx.measureText(currentLine + " " + word).width;
+        if (width < maxWidth) {
+            currentLine += " " + word;
+        } else {
+            lines.push(currentLine);
+            currentLine = word;
+        }
+    }
+    lines.push(currentLine);
+    return lines;
+}
+
+function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
+    return x2 < x1 + w1 && x2 + w2 > x1 && y2 < y1 + h1 && y2 + h2 > y1;
+}
+
+function loop() {
+    update();
+    draw();
+    frameCount++;
+    requestAnimationFrame(loop);
+}
+
+// Start
+init();
+
+</script>
+</body>
+</html>

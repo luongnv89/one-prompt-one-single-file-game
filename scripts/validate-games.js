@@ -72,6 +72,14 @@ const APPROVED_CDNS = [
 
 // Required fields in info.json
 const REQUIRED_FIELDS = ['name', 'description', 'model'];
+const THUMBNAIL_CANDIDATES = [
+  'thumbnail.png',
+  'thumbnail.jpg',
+  'thumbnail.jpeg',
+  'thumbnail.webp',
+  'screenshot.png',
+  'cover.png',
+];
 
 // Validation results tracking
 let validationErrors = [];
@@ -144,6 +152,40 @@ function validateInfoJson(gamePath, gameSlug) {
 
   if (info.version && typeof info.version !== 'string') {
     logWarning(`Field "version" should be a string`, gameSlug);
+  }
+
+  const normalizedOneShot =
+    typeof info.is_one_shot === 'boolean'
+      ? info.is_one_shot
+      : typeof info.isOneShot === 'boolean'
+        ? info.isOneShot
+        : undefined;
+  if (normalizedOneShot === undefined) {
+    logWarning(
+      'Field "is_one_shot" is missing. Defaulting to true in the manifest; please add it explicitly to info.json.',
+      gameSlug,
+    );
+  } else if (typeof normalizedOneShot !== 'boolean') {
+    logWarning(`Field "is_one_shot" should be boolean`, gameSlug);
+  }
+
+  if (info.thumbnail) {
+    if (typeof info.thumbnail !== 'string' || !info.thumbnail.trim()) {
+      logWarning(`Field "thumbnail" should be a non-empty string or removed`, gameSlug);
+    } else if (!/^https?:\/\//i.test(info.thumbnail)) {
+      const relative = info.thumbnail.replace(/^\.?\//, '');
+      const thumbPath = path.join(gamePath, relative);
+      if (!fs.existsSync(thumbPath)) {
+        logWarning(`Thumbnail file "${info.thumbnail}" not found. Default placeholder will be used.`, gameSlug);
+      }
+    }
+  } else {
+    const hasLocalThumbnail = THUMBNAIL_CANDIDATES.some((candidate) =>
+      fs.existsSync(path.join(gamePath, candidate)),
+    );
+    if (!hasLocalThumbnail) {
+      logWarning('No thumbnail image found. A generic placeholder will be used in the gallery.', gameSlug);
+    }
   }
 
   return info;

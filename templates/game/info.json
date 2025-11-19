@@ -3,6 +3,8 @@
   "description": "A brief description of your game (1-2 sentences)",
   "model": "GPT-4o",
   "version": "1.0.0",
+  "thumbnail": "thumbnail.png",
+  "is_one_shot": true,
   "author": {
     "name": "Your Name",
     "url": "https://github.com/yourusername"

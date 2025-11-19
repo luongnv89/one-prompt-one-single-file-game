@@ -56,13 +56,13 @@ export default function Gallery() {
     return games.filter((game) => {
       // Search query filter
       const query = searchQuery.toLowerCase();
-      const matchesSearch = !query.trim() || (
+      const matchesSearch =
+        !query.trim() ||
         game.name.toLowerCase().includes(query) ||
         game.description.toLowerCase().includes(query) ||
         game.model.toLowerCase().includes(query) ||
         game.genre.toLowerCase().includes(query) ||
-        (game.tags && game.tags.some((tag) => tag.toLowerCase().includes(query)))
-      );
+        (game.tags && game.tags.some((tag) => tag.toLowerCase().includes(query)));
 
       // Model filter
       const matchesModel = !selectedModel || game.model === selectedModel;
@@ -149,7 +149,9 @@ export default function Gallery() {
         <section className="relative mb-10 overflow-hidden rounded-3xl border border-gray-200 bg-white px-6 py-10 shadow-sm">
           <div className="grid gap-10 md:grid-cols-2">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.4em] text-gray-500">AI One-File Arcade</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.4em] text-gray-500">
+                AI One-File Arcade
+              </p>
               <img
                 src="/logo.svg"
                 alt="AI One-File Arcade logo"
@@ -158,16 +160,23 @@ export default function Gallery() {
                 decoding="async"
               />
               <h1 className="mt-4 text-4xl font-bold leading-tight text-gray-900 sm:text-5xl">
-                One prompt. One file. A curated AI arcade.
+                Upload and explore AI-built single-file games.
               </h1>
               <p className="mt-4 text-lg text-gray-700">
-                Explore fully sandboxed AI-built micro games. Every title ships as a single HTML file, so you can inspect it,
-                trust it, and play it instantly.
+                Drop in any AI-generated experience as long as it lives in one HTML file. Flag if
+                it was a one-shot prompt or an iterated build, keep the file sandbox-safe, and let
+                everyone inspect and play it instantly.
               </p>
               <div className="mt-6 flex flex-wrap gap-3 text-sm font-medium text-gray-700">
-                <span className="rounded-full bg-primary-lighter px-4 py-2 text-primary-dark">Sandbox security</span>
-                <span className="rounded-full bg-primary-lighter px-4 py-2 text-primary-dark">AI-only titles</span>
-                <span className="rounded-full bg-primary-lighter px-4 py-2 text-primary-dark">Manifest driven</span>
+                <span className="rounded-full bg-primary-lighter px-4 py-2 text-primary-dark">
+                  Sandbox security
+                </span>
+                <span className="rounded-full bg-primary-lighter px-4 py-2 text-primary-dark">
+                  AI-only uploads
+                </span>
+                <span className="rounded-full bg-primary-lighter px-4 py-2 text-primary-dark">
+                  One-shot tagging
+                </span>
               </div>
               <div className="mt-8 flex flex-wrap gap-4">
                 <a
@@ -188,7 +197,9 @@ export default function Gallery() {
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-primary-lighter/60 p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary-dark">Arcade snapshot</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary-dark">
+                Arcade snapshot
+              </p>
               <div className="mt-6 grid grid-cols-3 gap-4">
                 {[
                   { label: 'Games', value: heroStats.games },
@@ -197,14 +208,17 @@ export default function Gallery() {
                 ].map((stat) => (
                   <div key={stat.label} className="rounded-2xl bg-white p-4 text-center shadow-sm">
                     <p className="text-3xl font-bold text-gray-900">{stat.value || 0}</p>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{stat.label}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      {stat.label}
+                    </p>
                   </div>
                 ))}
               </div>
               <div className="mt-6 rounded-xl bg-white p-4 text-sm text-gray-700 shadow-sm">
                 <p className="font-semibold text-gray-900">Why single-file?</p>
                 <p className="mt-2">
-                  Single HTML files keep games transparent, portable, and easy to audit—perfect for an AI-first arcade focused on safety.
+                  Single HTML files keep games transparent, portable, and easy to audit—perfect for
+                  an AI-first arcade focused on safety.
                 </p>
               </div>
             </div>
@@ -295,7 +309,9 @@ export default function Gallery() {
               {/* Filter Tags Section */}
               <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200 bg-white/80 p-4 shadow-sm">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">AI Model:</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    AI Model:
+                  </span>
                   <button
                     onClick={() => handleModelFilter('')}
                     className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
@@ -321,7 +337,9 @@ export default function Gallery() {
                   ))}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Genre:</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Genre:
+                  </span>
                   <button
                     onClick={() => handleGenreFilter('')}
                     className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
@@ -347,7 +365,9 @@ export default function Gallery() {
                   ))}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Difficulty:</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Difficulty:
+                  </span>
                   <button
                     onClick={() => handleDifficultyFilter('')}
                     className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
@@ -397,14 +417,16 @@ export default function Gallery() {
                           <span className="ml-1">
                             {searchQuery && <span>search"</span>}
                             <span className="font-medium">"{searchQuery}"</span>
-                            {(selectedModel || selectedGenre || selectedDifficulty) ? ',' : ''}
+                            {selectedModel || selectedGenre || selectedDifficulty ? ',' : ''}
                           </span>
                         )}
                         {selectedModel && (
                           <span className="ml-1">
-                            {(!searchQuery && selectedGenre) || (!searchQuery && !selectedGenre) ? '(' : ''}
+                            {(!searchQuery && selectedGenre) || (!searchQuery && !selectedGenre)
+                              ? '('
+                              : ''}
                             <span className="font-medium">{selectedModel}</span>
-                            {(selectedGenre || selectedDifficulty) ? ',' : ''}
+                            {selectedGenre || selectedDifficulty ? ',' : ''}
                           </span>
                         )}
                         {selectedGenre && (
@@ -419,7 +441,7 @@ export default function Gallery() {
                           </span>
                         )}
                         <span className="ml-1">
-                          {(selectedModel || selectedGenre || selectedDifficulty) ? ')' : ''}
+                          {selectedModel || selectedGenre || selectedDifficulty ? ')' : ''}
                         </span>
                       </span>
                     )}
@@ -428,33 +450,34 @@ export default function Gallery() {
               </div>
             </div>
 
-            {filteredGames.length === 0 && (searchQuery || selectedModel || selectedGenre || selectedDifficulty) && (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400 mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                <p className="text-gray-700 text-lg mb-2">No games found</p>
-                <p className="text-gray-500">Try adjusting your search terms or filters</p>
-                {(selectedModel || selectedGenre || selectedDifficulty) && (
-                  <button
-                    onClick={handleClearFilters}
-                    className="mt-3 text-primary hover:text-primary-dark font-medium"
+            {filteredGames.length === 0 &&
+              (searchQuery || selectedModel || selectedGenre || selectedDifficulty) && (
+                <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                  <svg
+                    className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    Clear all filters
-                  </button>
-                )}
-              </div>
-            )}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <p className="text-gray-700 text-lg mb-2">No games found</p>
+                  <p className="text-gray-500">Try adjusting your search terms or filters</p>
+                  {(selectedModel || selectedGenre || selectedDifficulty) && (
+                    <button
+                      onClick={handleClearFilters}
+                      className="mt-3 text-primary hover:text-primary-dark font-medium"
+                    >
+                      Clear all filters
+                    </button>
+                  )}
+                </div>
+              )}
 
             {filteredGames.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

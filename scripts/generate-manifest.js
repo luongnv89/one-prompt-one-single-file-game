@@ -16,6 +16,15 @@ const __dirname = path.dirname(__filename);
 
 const GAMES_DIR = path.join(__dirname, '../public/games');
 const OUTPUT_FILE = path.join(__dirname, '../public/games-manifest.json');
+const DEFAULT_THUMBNAIL = '/default-thumbnail.png';
+const THUMBNAIL_CANDIDATES = [
+  'thumbnail.png',
+  'thumbnail.jpg',
+  'thumbnail.jpeg',
+  'thumbnail.webp',
+  'screenshot.png',
+  'cover.png',
+];
 
 // Required fields in info.json
 const REQUIRED_FIELDS = ['name', 'description', 'model'];
@@ -64,6 +73,43 @@ function scanGamesDir(dir) {
 /**
  * Validate a game folder and extract metadata
  */
+function toPublicPath(gameSlug, relativePath) {
+  const cleaned = relativePath.replace(/^\.?\//, '').replace(/\\/g, '/');
+  return `/games/${gameSlug}/${cleaned}`;
+}
+
+function resolveThumbnail(gamePath, gameSlug, info) {
+  const normalizeRelative = (value) => value.replace(/^\.?\//, '');
+  const ensureLocalFile = (value) => {
+    const relative = normalizeRelative(value);
+    const absolute = path.join(gamePath, relative);
+    if (fs.existsSync(absolute)) {
+      return toPublicPath(gameSlug, relative);
+    }
+    return null;
+  };
+
+  if (info.thumbnail) {
+    if (/^https?:\/\//i.test(info.thumbnail)) {
+      return info.thumbnail;
+    }
+    const localPath = ensureLocalFile(info.thumbnail);
+    if (localPath) {
+      return localPath;
+    }
+    console.warn(`  ⚠️  Declared thumbnail "${info.thumbnail}" not found in ${gameSlug}. Falling back to default.`);
+  }
+
+  for (const candidate of THUMBNAIL_CANDIDATES) {
+    const resolved = ensureLocalFile(candidate);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return DEFAULT_THUMBNAIL;
+}
+
 function validateGameFolder(gamePath, gameSlug) {
   try {
     // Check for index.html
@@ -129,12 +175,21 @@ function validateGameFolder(gamePath, gameSlug) {
     const hasPrompt = fs.existsSync(promptPath);
 
     // Build game object
+    const thumbnail = resolveThumbnail(gamePath, gameSlug, info);
+
     const game = {
       slug: gameSlug,
       name: info.name,
       description: info.description,
       model: info.model,
       path: `/games/${gameSlug}/index.html`,
+      thumbnail,
+      is_one_shot:
+        typeof info.is_one_shot === 'boolean'
+          ? info.is_one_shot
+          : typeof info.isOneShot === 'boolean'
+            ? info.isOneShot
+            : true,
       hasPrompt: hasPrompt,
       version: info.version || '1.0.0',
       author: info.author || { name: 'Anonymous', url: null },

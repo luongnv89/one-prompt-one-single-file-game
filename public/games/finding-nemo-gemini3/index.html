@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finding Nemo: Ocean Quest</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --bg-color: #000;
+            --ocean-blue: #006994;
+            --ui-text: #fff;
+            --accent: #e67e22;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Press Start 2P', cursive;
+            color: var(--ui-text);
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            box-shadow: 0 0 30px rgba(0, 105, 148, 0.6);
+            border: 4px solid #fff;
+        }
+
+        canvas {
+            background-color: var(--ocean-blue);
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        /* UI Overlays */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 15, 30, 0.92); /* Darker blue overlay */
+            text-align: center;
+            z-index: 10;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 { color: var(--accent); text-shadow: 3px 3px #000; line-height: 1.5; font-size: 28px; margin-bottom: 10px; }
+        h2 { color: #f1c40f; font-size: 20px; margin-bottom: 20px; text-shadow: 2px 2px #000; }
+        p { font-size: 12px; line-height: 1.8; max-width: 80%; margin: 0 auto 15px auto; color: #bdc3c7; }
+
+        /* Controls & Rules Box */
+        .rules-box {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #3498db;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: left;
+            font-size: 10px;
+            width: 60%;
+        }
+
+        .rules-box h3 {
+            color: #3498db;
+            margin-top: 0;
+            text-align: center;
+            border-bottom: 1px solid #3498db;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        .rules-box ul {
+            list-style: none;
+            padding: 0;
+            line-height: 2;
+        }
+
+        /* Mission Box */
+        .mission-box {
+            border: 2px dashed #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            padding: 15px;
+            margin: 20px auto;
+            width: 70%;
+        }
+
+        .mission-highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        input[type="text"] {
+            font-family: 'Press Start 2P', cursive;
+            padding: 12px;
+            font-size: 14px;
+            margin: 10px 0;
+            text-align: center;
+            text-transform: uppercase;
+            border: 2px solid #fff;
+            background: #000;
+            color: #fff;
+        }
+
+        button {
+            font-family: 'Press Start 2P', cursive;
+            background: var(--accent);
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 15px 25px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: transform 0.1s;
+        }
+
+        button:hover { transform: scale(1.05); background: #d35400; }
+
+        .leaderboard {
+            margin-top: 20px;
+            font-size: 10px;
+            text-align: left;
+            border: 1px solid #fff;
+            padding: 10px;
+            background: #2c3e50;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="overlay">
+        <h1>FINDING NEMO<br>OCEAN QUEST</h1>
+        
+        <!-- NEW: Rules Explanation -->
+        <div class="rules-box">
+            <h3>HOW TO PLAY</h3>
+            <ul>
+                <li>🏊 <b>ARROWS / WASD</b> : Swim Movement</li>
+                <li>💨 <b>SPACEBAR</b> : Dash / Speed Boost</li>
+                <li>⚠️ <b>AVOID</b> : Enemies & Hazards</li>
+                <li>⏳ <b>GOAL</b> : Fill the green bar to win!</li>
+            </ul>
+        </div>
+
+        <input type="text" id="player-name" maxlength="8" placeholder="ENTER NAME">
+        <button id="start-btn">START JOURNEY</button>
+        
+        <div id="high-scores" class="leaderboard">Loading Scores...</div>
+    </div>
+
+    <!-- LEVEL INTRO / MISSION SCREEN -->
+    <div id="story-screen" class="overlay hidden">
+        <h2 id="level-title">Level 1</h2>
+        
+        <p id="story-content">Story text...</p>
+
+        <!-- NEW: Explicit Mission Instructions -->
+        <div class="mission-box">
+            <p style="color:#fff; margin-bottom:5px;">CURRENT MISSION:</p>
+            <p id="mission-instruction" class="mission-highlight">SURVIVE</p>
+        </div>
+
+        <button id="next-level-btn">START LEVEL (SPACE)</button>
+    </div>
+
+    <!-- PAUSE SCREEN -->
+    <div id="pause-screen" class="overlay hidden">
+        <h2>PAUSED</h2>
+        <p>Controls Reminder:</p>
+        <p>Arrows to Move | Space to Dash</p>
+        <button onclick="togglePause()">RESUME</button>
+    </div>
+
+    <!-- GAME OVER SCREEN -->
+    <div id="game-over-screen" class="overlay hidden">
+        <h1 style="color: #c0392b;">GAME OVER</h1>
+        <p id="fail-message">You were caught!</p>
+        <p>Score: <span id="final-score">0</span></p>
+        <button onclick="location.reload()">TRY AGAIN</button>
+    </div>
+
+    <!-- VICTORY SCREEN -->
+    <div id="victory-screen" class="overlay hidden">
+        <h1 style="color: #2ecc71;">NEMO FOUND!</h1>
+        <p>Marlin and Nemo are finally reunited.</p>
+        <p>Final Score: <span id="victory-score">0</span></p>
+        <button onclick="location.reload()">PLAY AGAIN</button>
+    </div>
+</div>
+
+<script>
+/**
+ * GAME ENGINE & LOGIC
+ */
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const SCREEN_W = canvas.width;
+const SCREEN_H = canvas.height;
+
+// Colors
+const C_MARLIN = '#FF6600';
+const C_MARLIN_STRIPE = '#FFFFFF';
+const C_ENEMY = '#E74C3C';
+const C_JELLY = '#FF69B4';
+const C_SHARK = '#95A5A6';
+
+// Game State
+const STATE = { START: 0, STORY: 1, PLAY: 2, PAUSE: 3, GAMEOVER: 4, VICTORY: 5 };
+
+let currentState = STATE.START;
+let frameCount = 0;
+let score = 0;
+let playerName = "PLAYER";
+let currentLevelIdx = 0;
+let keys = {};
+let particles = [];
+let entities = [];
+let gameLoopId;
+
+// Audio Context
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioContext();
+
+function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+    if (type === 'jump') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    } else if (type === 'collect') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.setValueAtTime(800, now + 0.1);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    } else if (type === 'hit') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+    }
+}
+
+// --- Level Configuration (UPDATED WITH INSTRUCTIONS) ---
+const LEVELS = [
+    {
+        title: "Level 1: Coral Reef Escape",
+        story: "Marlin and Dory must leave the safe reef to begin their journey.",
+        instruction: "DODGE the Red Barracudas!\nReach the end of the reef.", // Explicit instruction
+        type: "sidescroll",
+        enemyType: "barracuda",
+        bg: "#006994",
+        enemySpeed: 3,
+        spawnRate: 60,
+        goalDistance: 2000
+    },
+    {
+        title: "Level 2: Jellyfish Jungle",
+        story: "A forest of jellyfish blocks the path. Remember: Tops are safe, tentacles sting!",
+        instruction: "SURVIVE for 25 Seconds.\nDon't touch the pink tentacles!",
+        type: "dodge",
+        enemyType: "jelly",
+        bg: "#2c3e50",
+        enemySpeed: 2,
+        spawnRate: 30,
+        duration: 1500 
+    },
+    {
+        title: "Level 3: Shark Encounter",
+        story: "You've wandered into a sunken ship. Bruce is in a feeding frenzy!",
+        instruction: "OUTRUN the Sharks!\nSurvive until the timer runs out.",
+        type: "survival",
+        enemyType: "shark",
+        bg: "#001f3f",
+        enemySpeed: 5,
+        spawnRate: 90,
+        duration: 1500 
+    },
+    {
+        title: "Level 4: The EAC Ride",
+        story: "You're riding the East Australian Current with the turtles.",
+        instruction: "HIGH SPEED CHALLENGE!\nDodge rocks and keep moving right.",
+        type: "sidescroll",
+        enemyType: "rock",
+        bg: "#3498db",
+        enemySpeed: 8, 
+        spawnRate: 40,
+        goalDistance: 3000
+    },
+    {
+        title: "Final Level: Sydney Rescue",
+        story: "You've reached the Dentist's office. Navigate the tank filters to save Nemo!",
+        instruction: "NAVIGATE the debris.\nReach Nemo at the end!",
+        type: "boss", 
+        enemyType: "debris",
+        bg: "#1abc9c",
+        enemySpeed: 4,
+        spawnRate: 50,
+        goalDistance: 1500
+    }
+];
+
+// --- Entity Classes ---
+class Player {
+    constructor() {
+        this.w = 30;
+        this.h = 20;
+        this.x = 50;
+        this.y = SCREEN_H / 2;
+        this.vx = 0;
+        this.vy = 0;
+        this.speed = 5;
+        this.dashCooldown = 0;
+    }
+
+    update() {
+        if (keys['ArrowUp'] || keys['w']) this.vy = -this.speed;
+        else if (keys['ArrowDown'] || keys['s']) this.vy = this.speed;
+        else this.vy = 0;
+
+        if (keys['ArrowLeft'] || keys['a']) this.vx = -this.speed;
+        else if (keys['ArrowRight'] || keys['d']) this.vx = this.speed;
+        else this.vx = 0;
+
+        if (this.dashCooldown > 0) this.dashCooldown--;
+        if (keys[' '] && this.dashCooldown === 0) {
+            this.vx *= 3;
+            this.vy *= 3;
+            this.dashCooldown = 30; 
+            playSound('jump');
+            createParticles(this.x, this.y, 10, '#fff');
+        }
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x < 0) this.x = 0;
+        if (this.x > SCREEN_W - this.w) this.x = SCREEN_W - this.w;
+        if (this.y < 0) this.y = 0;
+        if (this.y > SCREEN_H - this.h) this.y = SCREEN_H - this.h;
+    }
+
+    draw() {
+        // Marlin Body
+        ctx.fillStyle = C_MARLIN;
+        ctx.beginPath();
+        ctx.ellipse(this.x + this.w/2, this.y + this.h/2, this.w/2, this.h/2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Stripes
+        ctx.fillStyle = C_MARLIN_STRIPE;
+        ctx.fillRect(this.x + 10, this.y + 2, 5, 16);
+        ctx.fillRect(this.x + 20, this.y + 4, 5, 12);
+        // Eye
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(this.x + 24, this.y + 8, 3, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(this.x + 25, this.y + 8, 1, 0, Math.PI*2);
+        ctx.fill();
+    }
+}
+
+class Enemy {
+    constructor(type, speed) {
+        this.type = type;
+        this.w = 30;
+        this.h = 30;
+        this.speed = speed;
+        this.active = true;
+        this.x = SCREEN_W + 50;
+        this.y = Math.random() * (SCREEN_H - this.h);
+        
+        if (type === 'jelly') {
+            this.vx = -speed * 0.5;
+            this.vy = (Math.random() - 0.5) * 2; 
+            this.color = C_JELLY;
+        } else if (type === 'shark') {
+            this.w = 80; 
+            this.h = 50;
+            this.vx = -speed * 1.5;
+            this.vy = (player.y - this.y) * 0.02;
+            this.color = C_SHARK;
+        } else {
+            this.vx = -speed;
+            this.vy = 0;
+            this.color = type === 'rock' ? '#7f8c8d' : C_ENEMY;
+        }
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.type === 'jelly') {
+            if (this.y < 0 || this.y > SCREEN_H) this.vy *= -1;
+        }
+        if (this.x < -100) this.active = false;
+    }
+
+    draw() {
+        ctx.fillStyle = this.color;
+        if (this.type === 'jelly') {
+            ctx.beginPath();
+            ctx.arc(this.x + 15, this.y + 10, 15, Math.PI, 0);
+            ctx.fill();
+            ctx.fillRect(this.x + 5, this.y + 10, 2, 20);
+            ctx.fillRect(this.x + 15, this.y + 10, 2, 20);
+            ctx.fillRect(this.x + 25, this.y + 10, 2, 20);
+        } else if (this.type === 'shark') {
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y + this.h/2);
+            ctx.lineTo(this.x + this.w, this.y);
+            ctx.lineTo(this.x + this.w, this.y + this.h);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y + this.h/2);
+            ctx.lineTo(this.x+10, this.y+this.h/2 - 5);
+            ctx.lineTo(this.x+10, this.y+this.h/2 + 5);
+            ctx.fill();
+        } else {
+            ctx.fillRect(this.x, this.y, this.w, this.h);
+        }
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 5;
+        this.vy = (Math.random() - 0.5) * 5;
+        this.life = 30;
+        this.color = color;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+    }
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.life / 30;
+        ctx.fillRect(this.x, this.y, 4, 4);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+let player = new Player();
+let levelProgress = 0;
+let levelDurationCounter = 0;
+
+function init() {
+    loadHighScores();
+    
+    window.addEventListener('keydown', e => {
+        keys[e.key] = true;
+        if (e.key === 'p' || e.key === 'P') togglePause();
+        if (e.key === ' ' && currentState === STATE.STORY) startLevel();
+    });
+    window.addEventListener('keyup', e => keys[e.key] = false);
+    
+    document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('next-level-btn').addEventListener('click', startLevel);
+
+    gameLoopId = requestAnimationFrame(loop);
+}
+
+function startGame() {
+    const input = document.getElementById('player-name');
+    if (!input.value.trim()) {
+        alert("Please enter a name!");
+        return;
+    }
+    playerName = input.value.trim();
+    score = 0;
+    currentLevelIdx = 0;
+    document.getElementById('start-screen').classList.add('hidden');
+    loadStoryLevel(currentLevelIdx);
+}
+
+function loadStoryLevel(idx) {
+    if (idx >= LEVELS.length) {
+        victory();
+        return;
+    }
+    currentState = STATE.STORY;
+    const lvl = LEVELS[idx];
+    document.getElementById('story-screen').classList.remove('hidden');
+    document.getElementById('level-title').innerText = lvl.title;
+    document.getElementById('story-content').innerText = lvl.story;
+    // Update Instruction Text
+    document.getElementById('mission-instruction').innerText = lvl.instruction;
+}
+
+function startLevel() {
+    document.getElementById('story-screen').classList.add('hidden');
+    currentState = STATE.PLAY;
+    player = new Player();
+    entities = [];
+    particles = [];
+    levelProgress = 0;
+    levelDurationCounter = 0;
+}
+
+function createParticles(x, y, count, color) {
+    for(let i=0; i<count; i++) {
+        particles.push(new Particle(x, y, color));
+    }
+}
+
+function togglePause() {
+    if (currentState === STATE.PLAY) {
+        currentState = STATE.PAUSE;
+        document.getElementById('pause-screen').classList.remove('hidden');
+    } else if (currentState === STATE.PAUSE) {
+        currentState = STATE.PLAY;
+        document.getElementById('pause-screen').classList.add('hidden');
+    }
+}
+
+function gameOver() {
+    currentState = STATE.GAMEOVER;
+    playSound('hit');
+    document.getElementById('game-over-screen').classList.remove('hidden');
+    document.getElementById('fail-message').innerText = `Defeated in ${LEVELS[currentLevelIdx].title}`;
+    document.getElementById('final-score').innerText = Math.floor(score);
+    saveHighScore(playerName, Math.floor(score));
+}
+
+function victory() {
+    currentState = STATE.VICTORY;
+    playSound('collect');
+    document.getElementById('victory-screen').classList.remove('hidden');
+    document.getElementById('victory-score').innerText = Math.floor(score);
+    saveHighScore(playerName, Math.floor(score));
+}
+
+function update() {
+    if (currentState !== STATE.PLAY) return;
+
+    score += 0.1; 
+    levelDurationCounter++;
+    const currentLevel = LEVELS[currentLevelIdx];
+
+    player.update();
+
+    // Spawn Enemies
+    if (frameCount % currentLevel.spawnRate === 0) {
+        entities.push(new Enemy(currentLevel.enemyType, currentLevel.enemySpeed));
+    }
+
+    entities.forEach((e, index) => {
+        e.update();
+        
+        if (player.x < e.x + e.w &&
+            player.x + player.w > e.x &&
+            player.y < e.y + e.h &&
+            player.y + player.h > e.y) {
+                createParticles(player.x, player.y, 20, '#FF0000');
+                gameOver();
+        }
+        if (!e.active) entities.splice(index, 1);
+    });
+
+    particles.forEach((p, i) => {
+        p.update();
+        if (p.life <= 0) particles.splice(i, 1);
+    });
+
+    // Check Win Condition
+    if (currentLevel.type === 'sidescroll' || currentLevel.type === 'boss') {
+        levelProgress += 2;
+        if (levelProgress >= currentLevel.goalDistance) levelComplete();
+    } else if (currentLevel.type === 'dodge' || currentLevel.type === 'survival') {
+        if (levelDurationCounter >= currentLevel.duration) levelComplete();
+    }
+}
+
+function levelComplete() {
+    playSound('collect');
+    score += 1000;
+    currentLevelIdx++;
+    loadStoryLevel(currentLevelIdx);
+}
+
+function draw() {
+    ctx.fillStyle = (currentState === STATE.PLAY || currentState === STATE.STORY) 
+        ? LEVELS[currentLevelIdx]?.bg || '#000' : '#000';
+    ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+
+    if (currentState === STATE.PLAY || currentState === STATE.PAUSE) {
+        // Background Bubbles
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        for(let i=0; i<5; i++) {
+            let bx = (frameCount * 2 + i * 100) % SCREEN_W;
+            let by = (frameCount + i * 50) % SCREEN_H;
+            ctx.beginPath();
+            ctx.arc(bx, by, 5 + i, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        player.draw();
+        entities.forEach(e => e.draw());
+        particles.forEach(p => p.draw());
+
+        // HUD
+        ctx.fillStyle = '#fff';
+        ctx.font = "14px 'Press Start 2P'";
+        ctx.fillText(`Score: ${Math.floor(score)}`, 20, 30);
+        ctx.fillText(`Level: ${currentLevelIdx + 1}`, 20, 50);
+        
+        const lvl = LEVELS[currentLevelIdx];
+        let percent = 0;
+        if (lvl.type === 'sidescroll' || lvl.type === 'boss') {
+            percent = Math.min(100, (levelProgress / lvl.goalDistance) * 100);
+        } else {
+            percent = Math.min(100, (levelDurationCounter / lvl.duration) * 100);
+        }
+        
+        // Progress Bar
+        ctx.strokeStyle = '#fff';
+        ctx.strokeRect(SCREEN_W/2 - 100, 20, 200, 10);
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(SCREEN_W/2 - 98, 22, 196 * (percent/100), 6);
+    }
+}
+
+function loop() {
+    frameCount++;
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+function loadHighScores() {
+    const stored = localStorage.getItem('nemoQuestHighScores');
+    let scores = stored ? JSON.parse(stored) : [];
+    const div = document.getElementById('high-scores');
+    if (scores.length === 0) {
+        div.innerHTML = "NO SCORES YET";
+        return;
+    }
+    let html = "LEADERBOARD:<br>";
+    scores.slice(0, 5).forEach((s, i) => {
+        html += `${i+1}. ${s.name} - ${s.score}<br>`;
+    });
+    div.innerHTML = html;
+}
+
+function saveHighScore(name, finalScore) {
+    const stored = localStorage.getItem('nemoQuestHighScores');
+    let scores = stored ? JSON.parse(stored) : [];
+    scores.push({ name: name, score: finalScore });
+    scores.sort((a, b) => b.score - a.score);
+    localStorage.setItem('nemoQuestHighScores', JSON.stringify(scores));
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Frontiers 3D</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #0a0a23;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+        }
+
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-size: 24px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="ui"></div>
+        <div id="message"></div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.164.1/build/three.module.js';
+
+        const container = document.getElementById('gameContainer');
+        const ui = document.getElementById('ui');
+        const message = document.getElementById('message');
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+
+        // Game state
+        let game = {
+            stage: 1,
+            score: 0,
+            lives: 3,
+            running: true,
+            timeDistortion: false
+        };
+
+        // Player (Commander Elara Vance)
+        const playerGeometry = new THREE.BoxGeometry(1, 1, 2);
+        const playerMaterial = new THREE.MeshPhongMaterial({ color: 0x00CED1 });
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.set(0, 0, 0);
+        scene.add(player);
+
+        // Camera setup
+        camera.position.set(0, 5, 10);
+        camera.lookAt(player.position);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight.position.set(0, 1, 1);
+        scene.add(directionalLight);
+
+        // Game objects
+        const bullets = [];
+        const enemies = [];
+        const anomalies = [];
+
+        class Bullet {
+            constructor() {
+                const geometry = new THREE.SphereGeometry(0.2, 8, 8);
+                const material = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.position.copy(player.position);
+                this.mesh.position.z -= 2;
+                scene.add(this.mesh);
+            }
+            update() {
+                this.mesh.position.z -= 0.5;
+                if (this.mesh.position.z < -50) return true;
+                return false;
+            }
+        }
+
+        class Enemy {
+            constructor() {
+                const geometry = new THREE.BoxGeometry(1, 1, 1);
+                const material = new THREE.MeshPhongMaterial({ color: 0xFF4500 });
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.position.set(
+                    (Math.random() - 0.5) * 20,
+                    0,
+                    -40 - Math.random() * 10
+                );
+                scene.add(this.mesh);
+            }
+            update() {
+                this.mesh.position.z += 0.1 + game.stage * 0.05;
+                if (this.mesh.position.z > 5) return true;
+                return false;
+            }
+        }
+
+        class Anomaly {
+            constructor() {
+                const geometry = new THREE.SphereGeometry(3, 16, 16);
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0x9370DB,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.position.set(
+                    (Math.random() - 0.5) * 20,
+                    (Math.random() - 0.5) * 10,
+                    -40
+                );
+                scene.add(this.mesh);
+                this.duration = 300;
+            }
+            update() {
+                this.duration--;
+                if (this.duration <= 0) return true;
+                return false;
+            }
+        }
+
+        // Controls
+        let keys = { left: false, right: false, space: false };
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') keys.left = true;
+            if (e.key === 'ArrowRight') keys.right = true;
+            if (e.key === ' ') keys.space = true;
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') keys.left = false;
+            if (e.key === 'ArrowRight') keys.right = false;
+            if (e.key === ' ') keys.space = false;
+        });
+
+        // Background stars
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 1000;
+        const positions = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i++) {
+            positions[i] = (Math.random() - 0.5) * 100;
+        }
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+
+        // Game logic
+        function spawnEnemy() {
+            if (Math.random() < 0.02 * game.stage) {
+                enemies.push(new Enemy());
+            }
+        }
+
+        function spawnAnomaly() {
+            if (game.stage >= 2 && Math.random() < 0.01) {
+                anomalies.push(new Anomaly());
+            }
+        }
+
+        function update() {
+            if (!game.running) return;
+
+            // Player movement
+            const speed = game.timeDistortion ? 0.1 : 0.2;
+            if (keys.left && player.position.x > -10) player.position.x -= speed;
+            if (keys.right && player.position.x < 10) player.position.x += speed;
+            if (keys.space && bullets.length < 5) {
+                bullets.push(new Bullet());
+                keys.space = false;
+            }
+
+            // Update bullets
+            bullets.forEach((bullet, index) => {
+                if (bullet.update()) {
+                    scene.remove(bullet.mesh);
+                    bullets.splice(index, 1);
+                }
+            });
+
+            // Update enemies
+            spawnEnemy();
+            enemies.forEach((enemy, eIndex) => {
+                if (enemy.update()) {
+                    scene.remove(enemy.mesh);
+                    enemies.splice(eIndex, 1);
+                    return;
+                }
+
+                // Collision with player
+                if (Math.abs(enemy.mesh.position.x - player.position.x) < 1 &&
+                    Math.abs(enemy.mesh.position.z - player.position.z) < 2) {
+                    game.lives--;
+                    scene.remove(enemy.mesh);
+                    enemies.splice(eIndex, 1);
+                }
+
+                // Collision with bullets
+                bullets.forEach((bullet, bIndex) => {
+                    if (Math.abs(bullet.mesh.position.x - enemy.mesh.position.x) < 1 &&
+                        Math.abs(bullet.mesh.position.z - enemy.mesh.position.z) < 1) {
+                        scene.remove(enemy.mesh);
+                        scene.remove(bullet.mesh);
+                        enemies.splice(eIndex, 1);
+                        bullets.splice(bIndex, 1);
+                        game.score += 10;
+                    }
+                });
+            });
+
+            // Update anomalies
+            spawnAnomaly();
+            anomalies.forEach((anomaly, index) => {
+                if (anomaly.update()) {
+                    scene.remove(anomaly.mesh);
+                    anomalies.splice(index, 1);
+                    return;
+                }
+                const dist = player.position.distanceTo(anomaly.mesh.position);
+                game.timeDistortion = dist < 3;
+            });
+
+            // Stage progression
+            if (game.score >= 50 && game.stage === 1) {
+                game.stage = 2;
+                showMessage("Entering Obsidian Nebula");
+            } else if (game.score >= 100 && game.stage === 2) {
+                game.stage = 3;
+                showMessage("Approaching Chronos Nexus");
+            } else if (game.score >= 150 && game.stage === 3) {
+                endGame(true);
+            }
+
+            if (game.lives <= 0) endGame(false);
+
+            // Camera follow
+            camera.position.x = player.position.x;
+            camera.position.z = player.position.z + 10;
+        }
+
+        function render() {
+            renderer.render(scene, camera);
+            ui.innerHTML = `
+                Stage: ${game.stage}<br>
+                Score: ${game.score}<br>
+                Lives: ${game.lives}<br>
+                ${game.timeDistortion ? 'Temporal Anomaly!' : ''}
+            `;
+        }
+
+        function showMessage(text) {
+            message.style.display = 'block';
+            message.textContent = text;
+            setTimeout(() => message.style.display = 'none', 2000);
+        }
+
+        function endGame(victory) {
+            game.running = false;
+            const ending = victory ?
+                "Victory! Elara secures the Chronos Engine as The Guardian" :
+                "Defeat! The Kryll Hegemony prevails";
+            showMessage(ending);
+        }
+
+        // Game loop
+        function animate() {
+            requestAnimationFrame(animate);
+            update();
+            render();
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>

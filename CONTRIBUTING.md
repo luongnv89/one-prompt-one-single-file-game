@@ -37,6 +37,7 @@ We welcome AI-generated single-file HTML games that:
 3. **Self-Contained**: No external dependencies (except approved CDNs - see Security Rules)
 4. **Playable**: Must be a complete, functional game
 5. **Transparent**: Include the prompt used to generate the game
+6. **Gallery Thumbnail**: Include a `thumbnail.png` (landscape, ~1200×675) to showcase the game card. If omitted, the platform will use the default placeholder art.
 
 ### Required Files
 
@@ -46,7 +47,8 @@ Every game submission must include:
 /games/[your-game-slug]/
 ├── index.html      # The game file (required)
 ├── info.json       # Game metadata (required)
-└── prompt.md       # AI prompt used (required)
+├── prompt.md       # AI prompt used (required)
+└── thumbnail.png   # Optional but recommended screenshot for gallery cards (1200x675)
 ```
 
 ### info.json Schema
@@ -57,6 +59,8 @@ Every game submission must include:
   "description": "A brief description of your game (1-2 sentences)",
   "model": "GPT-4o",
   "version": "1.0.0",
+  "thumbnail": "thumbnail.png",
+  "is_one_shot": true,
   "author": {
     "name": "Your Name",
     "url": "https://github.com/yourusername"
@@ -168,6 +172,28 @@ cp -r templates/game games/my-awesome-game
 1. Edit `games/my-awesome-game/index.html` with your AI-generated game
 2. Edit `games/my-awesome-game/info.json` with your game metadata
 3. Edit `games/my-awesome-game/prompt.md` with your AI prompt
+4. Dropped only `index.html`? Run `npm run create:info -- games/my-awesome-game` to scaffold a valid `info.json` using the HTML title/description, then update fields as needed.
+5. Capture a landscape `thumbnail.png` (ideally 1200×675) and store it alongside your `index.html` so the gallery can show a custom screenshot. If you skip this, the arcade falls back to a generic placeholder.
+6. Set `is_one_shot` in `info.json` (or through the CLI/meta tag) to `true` if the HTML came from a single AI prompt, otherwise `false`.
+
+Add optional metadata tags to your HTML head to pre-fill the generator:
+
+```html
+<meta name="ai-model" content="GPT-4o" />
+<meta name="ai-genre" content="Arcade" />
+<meta name="ai-difficulty" content="Medium" />
+<meta name="ai-tags" content="arcade,retro,ai" />
+<meta name="ai-author-name" content="Your Name" />
+<meta name="ai-author-url" content="https://github.com/you" />
+<meta name="ai-thumbnail" content="thumbnail.png" />
+<meta name="ai-is-one-shot" content="true" />
+<meta name="ai-controls-type" content="keyboard" />
+<meta name="ai-controls-text" content="Arrow keys to move" />
+<meta name="ai-duration" content="5 minutes" />
+<meta name="ai-model-version" content="1.0.0" />
+```
+
+The script respects CLI overrides; otherwise it uses these meta values instead of defaults.
 
 ### Step 5: Validate Your Game
 

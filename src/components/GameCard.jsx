@@ -8,28 +8,58 @@ import React from 'react';
  * @param {Function} props.onClick - Click handler
  */
 export default function GameCard({ game, onClick }) {
+  const thumbnailSrc = game.thumbnail || '/default-thumbnail.png';
+  const handleImageError = (event) => {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src = '/default-thumbnail.png';
+  };
+
   return (
     <div
       onClick={() => onClick && onClick(game)}
       className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border border-gray-200 hover:border-primary-light hover:-translate-y-1"
     >
+      <div className="relative h-48 w-full overflow-hidden bg-gray-100">
+        <img
+          src={thumbnailSrc}
+          alt={`${game.name} thumbnail`}
+          loading="lazy"
+          decoding="async"
+          onError={handleImageError}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-black/5 to-transparent" />
+      </div>
       <div className="p-6">
         <div className="flex items-start justify-between mb-3">
           <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1">
             {game.name}
           </h3>
-          {game.hasPrompt && (
-            <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium flex items-center gap-1">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Prompt
-            </span>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {typeof game.is_one_shot === 'boolean' && (
+              <span
+                className={`px-2 py-1 text-xs rounded-full font-medium ${
+                  game.is_one_shot
+                    ? 'bg-purple-100 text-purple-800'
+                    : 'bg-orange-100 text-orange-800'
+                }`}
+              >
+                {game.is_one_shot ? 'One-shot prompt' : 'Iterated build'}
+              </span>
+            )}
+            {game.hasPrompt && (
+              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium flex items-center gap-1">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Prompt
+              </span>
+            )}
+          </div>
         </div>
 
         <p className="text-gray-700 text-sm mb-4 line-clamp-2 leading-relaxed">

@@ -62,9 +62,7 @@ export default function AnalyticsDashboard() {
           </div>
         </div>
 
-        {!summary && (
-          <p className="text-sm text-gray-600">Loading analytics...</p>
-        )}
+        {!summary && <p className="text-sm text-gray-600">Loading analytics...</p>}
 
         {summary && (
           <div className="space-y-3">
@@ -96,9 +94,7 @@ export default function AnalyticsDashboard() {
               <p className="text-xs text-gray-500">
                 Last updated: {new Date(summary.lastUpdated).toLocaleTimeString()}
               </p>
-              <p className="text-xs text-gray-500">
-                Total events: {summary.eventCount}
-              </p>
+              <p className="text-xs text-gray-500">Total events: {summary.eventCount}</p>
             </div>
 
             {/* Privacy Notice */}
@@ -106,9 +102,7 @@ export default function AnalyticsDashboard() {
               <p className="text-xs text-gray-500">
                 🔒 Privacy-compliant: No personal data collected
               </p>
-              <p className="text-xs text-gray-500">
-                Stored locally in your browser
-              </p>
+              <p className="text-xs text-gray-500">Stored locally in your browser</p>
             </div>
 
             {/* Reset Button */}

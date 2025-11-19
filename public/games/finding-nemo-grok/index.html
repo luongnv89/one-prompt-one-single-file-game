@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finding Nemo: Ocean Quest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P" rel="stylesheet">
+    <style>
+        body { margin: 0; overflow: hidden; background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        canvas { display: block; background: linear-gradient(180deg, #0066cc 0%, #003366 100%); }
+        #overlay { position: absolute; background: rgba(0, 0, 0, 0.9); color: #fff; font-family: 'Press Start 2P', monospace; font-size: 16px; text-align: center; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        #overlay.show { display: flex; }
+        #introContent, #gameOverMenu, #pauseMenu, #highScores { display: none; }
+        #introContent.show, #gameOverMenu.show, #pauseMenu.show, #highScores.show { display: block; }
+        button { padding: 10px 20px; margin: 10px; background: #444; color: #fff; border: 2px solid #fff; cursor: pointer; font-family: 'Press Start 2P', monospace; font-size: 12px; }
+        button:hover { background: #666; }
+        input { padding: 10px; margin: 10px; background: #333; color: #fff; border: 2px solid #fff; font-family: 'Press Start 2P', monospace; font-size: 12px; }
+        #storyText { max-width: 600px; white-space: pre-wrap; }
+        .hint { color: #ffff00; font-style: italic; margin-top: 20px; }
+        #storyText ul { text-align: left; margin: 20px auto; width: 80%; list-style-type: none; }
+        #storyText li { margin: 10px 0; padding-left: 20px; position: relative; }
+        #storyText li:before { content: "►"; position: absolute; left: 0; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="overlay">
+        <div id="menuContent">
+            <h1>Finding Nemo: Ocean Quest</h1>
+            <input type="text" id="playerName" placeholder="Enter your name" maxlength="10">
+            <button onclick="validateNameAndStart()">Start Game</button>
+            <button onclick="showHighScores()">High Scores</button>
+        </div>
+        <div id="introContent">
+            <h1>Story Intro</h1>
+            <p id="storyText"></p>
+            <button onclick="startGame()">Begin Journey</button>
+        </div>
+        <div id="pauseMenu">
+            <h1>Paused</h1>
+            <button onclick="resumeGame()">Resume</button>
+            <button onclick="restartGame()">Restart</button>
+        </div>
+        <div id="gameOverMenu">
+            <h1 id="gameOverTitle">Game Over</h1>
+            <p id="gameOverMessage"></p>
+            <p>Your Score: <span id="finalScore"></span></p>
+            <button onclick="restartGame()">Play Again</button>
+            <button onclick="showHighScores()">High Scores</button>
+        </div>
+        <div id="highScores"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('overlay');
+        const menuContent = document.getElementById('menuContent');
+        const introContent = document.getElementById('introContent');
+        const pauseMenu = document.getElementById('pauseMenu');
+        const gameOverMenu = document.getElementById('gameOverMenu');
+        const highScoresDiv = document.getElementById('highScores');
+        const finalScoreSpan = document.getElementById('finalScore');
+        const playerNameInput = document.getElementById('playerName');
+        const storyText = document.getElementById('storyText');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+
+        // Game State
+        let gameState = 'menu';
+        let playerName = '';
+        let score = 0;
+        let highScores = JSON.parse(localStorage.getItem('highScores')) || [];
+        let level = 1;
+        let lives = 3;
+        let gameLoop;
+        let particles = [];
+
+        // Player (Marlin)
+        const player = { x: 50, y: 550, width: 30, height: 20, speed: 5, health: 100 };
+        let keys = { left: false, right: false, up: false, down: false };
+
+        // Enemies, Obstacles, Goals
+        let enemies = [];
+        let obstacles = [];
+        let goal = null;
+        let boss = null;
+
+        // Audio
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(freq, type = 'square', duration = 0.1) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        // Controls
+        let touchStartX = 0;
+        let touchStartY = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            if (gameState === 'paused') pauseGame();
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touchX = e.touches[0].clientX;
+            const touchY = e.touches[0].clientY;
+            keys.left = touchX < touchStartX - 20;
+            keys.right = touchX > touchStartX + 20;
+            keys.up = touchY < touchStartY - 20;
+            keys.down = touchY > touchStartY + 20;
+        });
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            keys.left = false;
+            keys.right = false;
+            keys.up = false;
+            keys.down = false;
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+            if (e.key === 'ArrowUp' || e.key === 'w') keys.up = true;
+            if (e.key === 'ArrowDown' || e.key === 's') keys.down = true;
+            if (e.key === 'p' && gameState === 'playing') pauseGame();
+            if (e.key === 'p' && gameState === 'paused') resumeGame();
+            if (e.key === 'Enter' && gameState === 'gameover') restartGame();
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+            if (e.key === 'ArrowUp' || e.key === 'w') keys.up = false;
+            if (e.key === 'ArrowDown' || e.key === 's') keys.down = false;
+        });
+
+        // Particles
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: (Math.random() - 0.5) * 5,
+                    size: Math.random() * 5 + 2,
+                    life: 30,
+                    color: color
+                });
+            }
+        }
+
+        function updateParticles() {
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+            });
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Level Data
+        const levelData = {
+            1: { title: "Coral Reef Escape", story: "After Nemo is taken, Marlin must leave his safe reef home.\nDory offers to help, but first they need to escape the dangerous reef predators!", objectives: ["Dodge aggressive fish", "Avoid the fishing net", "Find the way out"], hint: "Navigate around obstacles and enemies carefully!" },
+            2: { title: "Jellyfish Jungle", story: "A wise sea turtle mentions seeing a boat heading to Sydney.\nBut the path leads through a dangerous jellyfish forest!", objectives: ["Navigate through jellyfish", "Avoid tentacles", "Find the safe passage"], hint: "Watch the jellyfish placement and move strategically!" },
+            3: { title: "Sunken Shipwreck", story: "A clue leads to an old shipwreck where other fish saw the boat.\nBut ghost fish haunt these waters!", objectives: ["Avoid ghost fish", "Dodge debris", "Escape the shipwreck"], hint: "Keep moving to avoid the patrolling ghost fish!" },
+            4: { title: "Shark Encounter", story: "Bruce the shark invites you to a 'friendly' meeting.\nBut can sharks really be vegetarians?", objectives: ["Survive Bruce's chase", "Find an escape route"], hint: "Stay ahead of Bruce to reach safety!" },
+            5: { title: "EAC Ride", story: "Crush the turtle offers a ride on the East Australian Current.\nHold on tight - it's going to be a bumpy ride!", objectives: ["Dodge sea rocks", "Ride to Sydney"], hint: "Weave through the rocks to stay on course!" },
+            6: { title: "Sydney Harbor", story: "Finally in Sydney! But the harbor is full of dangers.\nThe dentist's office is just ahead!", objectives: ["Avoid seagulls", "Dodge fishing nets", "Reach the office"], hint: "Time your movements to slip past dangers!" },
+            7: { title: "The Great Escape", story: "Found Nemo! But the dentist's fish tank is heavily guarded.\nWork together to break out and return to the ocean!", objectives: ["Evade the guard", "Avoid traps", "Return to the ocean"], hint: "Stay alert and move quickly to freedom!" }
+        };
+
+        // Background Elements
+        const backgroundElements = { bubbles: [], seaweed: [], coral: [] };
+
+        function initBackground() {
+            for (let i = 0; i < 20; i++) {
+                backgroundElements.bubbles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 5 + 2,
+                    speed: Math.random() * 2 + 1
+                });
+            }
+            for (let i = 0; i < 8; i++) {
+                backgroundElements.seaweed.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    height: Math.random() * 50 + 30,
+                    segments: Math.floor(Math.random() * 3) + 3,
+                    swayOffset: Math.random() * 10
+                });
+            }
+            for (let i = 0; i < 5; i++) {
+                backgroundElements.coral.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 30 + 20,
+                    branches: Math.floor(Math.random() * 3) + 2,
+                    color: Math.random() > 0.5 ? '#ff69b4' : '#9370db'
+                });
+            }
+        }
+
+        function drawBackground() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#0066cc');
+            gradient.addColorStop(1, '#003366');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            backgroundElements.bubbles.forEach(bubble => {
+                const bubbleGradient = ctx.createRadialGradient(bubble.x, bubble.y, 0, bubble.x, bubble.y, bubble.size);
+                bubbleGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                bubbleGradient.addColorStop(1, 'rgba(255, 255, 255, 0.2)');
+                ctx.fillStyle = bubbleGradient;
+                ctx.beginPath();
+                ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
+                ctx.fill();
+                bubble.y -= bubble.speed;
+                if (bubble.y < -10) {
+                    bubble.y = canvas.height + 10;
+                    bubble.x = Math.random() * canvas.width;
+                }
+            });
+
+            backgroundElements.seaweed.forEach(plant => {
+                ctx.beginPath();
+                ctx.moveTo(plant.x, plant.y);
+                const segmentHeight = plant.height / plant.segments;
+                for (let i = 0; i < plant.segments; i++) {
+                    const sway = Math.sin(Date.now() / 1000 + plant.swayOffset + i) * 5;
+                    ctx.quadraticCurveTo(
+                        plant.x + sway,
+                        plant.y - segmentHeight * (i + 0.5),
+                        plant.x,
+                        plant.y - segmentHeight * (i + 1)
+                    );
+                }
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = '#0d5c0d';
+                ctx.stroke();
+            });
+
+            backgroundElements.coral.forEach(coral => {
+                ctx.fillStyle = coral.color;
+                ctx.beginPath();
+                ctx.arc(coral.x, coral.y, coral.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+                for (let i = 0; i < coral.branches; i++) {
+                    const angle = (i / coral.branches) * Math.PI * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(coral.x, coral.y);
+                    ctx.lineTo(coral.x + Math.cos(angle) * coral.size, coral.y + Math.sin(angle) * coral.size);
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = coral.color;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        function drawPlayer() {
+            const wiggle = Math.sin(Date.now() / 200) * 2;
+            ctx.save();
+            ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+
+            // Body with gradient
+            const bodyGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, player.width / 2);
+            bodyGradient.addColorStop(0, '#ff8c00');
+            bodyGradient.addColorStop(1, '#ff4500');
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, player.width / 2, player.height / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Black stripes with white outline
+            ctx.fillStyle = 'black';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-player.width / 3, -player.height / 2);
+            ctx.lineTo(-player.width / 3, player.height / 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(player.width / 3, -player.height / 2);
+            ctx.lineTo(player.width / 3, player.height / 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Dorsal fin
+            ctx.fillStyle = '#ff6347';
+            ctx.beginPath();
+            ctx.moveTo(0, -player.height / 2);
+            ctx.quadraticCurveTo(wiggle, -player.height, -wiggle, -player.height / 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawEnemies() {
+            enemies.forEach(enemy => {
+                const wiggle = Math.sin(Date.now() / 200 + enemy.x) * 2;
+                ctx.save();
+                ctx.translate(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+
+                // Body
+                ctx.fillStyle = '#cc0000';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, enemy.width / 2, enemy.height / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Fin
+                ctx.fillStyle = '#ff3333';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(-enemy.width / 2, -enemy.height / 2 + wiggle);
+                ctx.lineTo(enemy.width / 2, -enemy.height / 2);
+                ctx.fill();
+
+                ctx.restore();
+            });
+        }
+
+        function drawBoss() {
+            if (!boss) return;
+            const wiggle = Math.sin(Date.now() / 200) * 3;
+            ctx.save();
+            ctx.translate(boss.x + boss.width / 2, boss.y + boss.height / 2);
+
+            // Body with gradient
+            const bodyGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, boss.width / 2);
+            bodyGradient.addColorStop(0, '#808080');
+            bodyGradient.addColorStop(1, '#404040');
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, boss.width / 2, boss.height / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Dorsal fin
+            ctx.fillStyle = '#696969';
+            ctx.beginPath();
+            ctx.moveTo(0, -boss.height / 2);
+            ctx.lineTo(-boss.width / 4 + wiggle, -boss.height);
+            ctx.lineTo(boss.width / 4, -boss.height / 2);
+            ctx.fill();
+
+            // Teeth
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.moveTo(-boss.width / 4, boss.height / 2);
+            ctx.lineTo(0, boss.height / 2 + 5);
+            ctx.lineTo(boss.width / 4, boss.height / 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function initLevel() {
+            enemies = [];
+            obstacles = [];
+            goal = null;
+            boss = null;
+            player.x = 50;
+            player.y = canvas.height - 50;
+
+            if (level === 1) {
+                enemies.push({ x: 100, y: 100, width: 20, height: 15, speed: 2, direction: 'horizontal' });
+                enemies.push({ x: 300, y: 300, width: 20, height: 15, speed: 2, direction: 'vertical' });
+                enemies.push({ x: 500, y: 200, width: 20, height: 15, speed: 2, direction: 'horizontal' });
+                obstacles.push({ x: 300, y: 200, width: 200, height: 20, type: 'net', damage: 20 });
+                goal = { x: canvas.width - 50, y: 50, width: 20, height: 15 };
+            } else if (level === 2) {
+                for (let i = 0; i < 10; i++) {
+                    obstacles.push({ x: Math.random() * (canvas.width - 100) + 50, y: Math.random() * (canvas.height - 100) + 50, width: 25, height: 25, type: 'jellyfish', damage: 20 });
+                }
+                goal = { x: canvas.width - 50, y: 50, width: 20, height: 15 };
+            } else if (level === 3) {
+                enemies.push({ x: 200, y: 100, width: 20, height: 15, speed: 3, direction: 'horizontal' });
+                enemies.push({ x: 400, y: 300, width: 20, height: 15, speed: 3, direction: 'vertical' });
+                obstacles.push({ x: 500, y: 250, width: 50, height: 50, type: 'debris', damage: 15 });
+                goal = { x: canvas.width - 50, y: 50, width: 20, height: 15 };
+            } else if (level === 4) {
+                boss = { x: 600, y: 400, width: 60, height: 40, speed: 2 };
+                goal = { x: canvas.width - 50, y: 50, width: 20, height: 15 };
+            } else if (level === 5) {
+                for (let i = 0; i < 8; i++) {
+                    obstacles.push({ x: Math.random() * (canvas.width - 100) + 50, y: Math.random() * (canvas.height - 100) + 50, width: 30, height: 30, type: 'rock', damage: 15 });
+                }
+                goal = { x: canvas.width - 50, y: 50, width: 20, height: 15 };
+            } else if (level === 6) {
+                enemies.push({ x: 200, y: 100, width: 20, height: 15, speed: 2, direction: 'horizontal' });
+                enemies.push({ x: 400, y: 300, width: 20, height: 15, speed: 2, direction: 'vertical' });
+                obstacles.push({ x: 300, y: 200, width: 100, height: 20, type: 'net', damage: 20 });
+                goal = { x: canvas.width - 50, y: 50, width: 20, height: 15 };
+            } else if (level === 7) {
+                boss = { x: 600, y: 400, width: 60, height: 40, speed: 3 };
+                obstacles.push({ x: 300, y: 200, width: 80, height: 20, type: 'net', damage: 20 });
+                goal = { x: canvas.width - 50, y: 50, width: 20, height: 15 };
+            }
+
+            showLevelIntro();
+        }
+
+        function drawObstaclesAndGoal() {
+            obstacles.forEach(obstacle => {
+                ctx.save();
+                ctx.translate(obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2);
+                if (obstacle.type === 'jellyfish') {
+                    const pulse = Math.sin(Date.now() / 500) * 2;
+                    ctx.fillStyle = '#ff00ff';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, obstacle.width / 2 + pulse, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ff66ff';
+                    ctx.lineWidth = 2;
+                    for (let i = 0; i < 3; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(i * 5 - 5, obstacle.height / 2);
+                        ctx.quadraticCurveTo(0, obstacle.height / 2 + 10 + pulse, -i * 5 + 5, obstacle.height / 2);
+                        ctx.stroke();
+                    }
+                } else if (obstacle.type === 'net') {
+                    ctx.fillStyle = 'rgba(136, 136, 136, 0.7)';
+                    ctx.fillRect(-obstacle.width / 2, -obstacle.height / 2, obstacle.width, obstacle.height);
+                    ctx.strokeStyle = '#666';
+                    ctx.lineWidth = 1;
+                    for (let i = 0; i < obstacle.width; i += 10) {
+                        ctx.beginPath();
+                        ctx.moveTo(i - obstacle.width / 2, -obstacle.height / 2);
+                        ctx.lineTo(i - obstacle.width / 2, obstacle.height / 2);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(-obstacle.width / 2, i - obstacle.height / 2);
+                        ctx.lineTo(obstacle.width / 2, i - obstacle.height / 2);
+                        ctx.stroke();
+                    }
+                } else if (obstacle.type === 'rock') {
+                    ctx.fillStyle = '#555555';
+                    ctx.beginPath();
+                    ctx.moveTo(-obstacle.width / 2, -obstacle.height / 2);
+                    ctx.lineTo(0, -obstacle.height / 2 - 5);
+                    ctx.lineTo(obstacle.width / 2, -obstacle.height / 2);
+                    ctx.lineTo(obstacle.width / 2 + 5, obstacle.height / 2);
+                    ctx.lineTo(0, obstacle.height / 2 + 5);
+                    ctx.lineTo(-obstacle.width / 2 - 5, obstacle.height / 2);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (obstacle.type === 'debris') {
+                    ctx.fillStyle = '#8b4513';
+                    ctx.beginPath();
+                    ctx.moveTo(-obstacle.width / 2, -obstacle.height / 2);
+                    ctx.lineTo(obstacle.width / 2, -obstacle.height / 2 - 5);
+                    ctx.lineTo(obstacle.width / 2 + 5, obstacle.height / 2);
+                    ctx.lineTo(-obstacle.width / 2 + 5, obstacle.height / 2 + 5);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.restore();
+            });
+
+            if (goal) {
+                ctx.save();
+                ctx.translate(goal.x + goal.width / 2, goal.y + goal.height / 2);
+                const wiggle = Math.sin(Date.now() / 200) * 2;
+                const bodyGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, goal.width / 2);
+                bodyGradient.addColorStop(0, '#ff8c00');
+                bodyGradient.addColorStop(1, '#ff4500');
+                ctx.fillStyle = bodyGradient;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, goal.width / 2, goal.height / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(-goal.width / 3, -goal.height / 2);
+                ctx.lineTo(-goal.width / 3, goal.height / 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(goal.width / 3, -goal.height / 2);
+                ctx.lineTo(goal.width / 3, goal.height / 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#ff6347';
+                ctx.beginPath();
+                ctx.moveTo(0, -goal.height / 2);
+                ctx.quadraticCurveTo(wiggle, -goal.height, -wiggle, -goal.height / 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function showLevelIntro() {
+            gameState = 'levelIntro';
+            overlay.classList.add('show');
+            menuContent.style.display = 'none';
+            introContent.style.display = 'block';
+            storyText.innerHTML = `
+                <h2>${levelData[level].title}</h2>
+                <p>${levelData[level].story}</p>
+                <h3>Objectives:</h3>
+                <ul>${levelData[level].objectives.map(obj => `<li>${obj}</li>`).join('')}</ul>
+                <p class="hint"><strong>Hint:</strong> ${levelData[level].hint}</p>
+                <button onclick="beginLevel()">Begin Level</button>
+            `;
+        }
+
+        function beginLevel() {
+            gameState = 'playing';
+            overlay.classList.remove('show');
+            introContent.style.display = 'none';
+            gameLoop = requestAnimationFrame(gameLoopFn);
+        }
+
+        function startGame() {
+            score = 0;
+            lives = 3;
+            level = 1;
+            player.health = 100;
+            initLevel();
+            initBackground();
+        }
+
+        function validateNameAndStart() {
+            playerName = playerNameInput.value.trim();
+            if (!playerName) {
+                alert('Please enter your name to start the game!');
+                return;
+            }
+            gameState = 'intro';
+            overlay.classList.add('show');
+            menuContent.style.display = 'none';
+            introContent.style.display = 'block';
+            storyText.innerHTML = `
+                <h2>Finding Nemo</h2>
+                <p>Marlin, a clownfish, wakes to find his son Nemo gone!
+                A diver took him to Sydney!
+                With Dory's help, Marlin must brave the ocean.
+                Dodge dangers, find clues, and rescue Nemo!</p>
+                <button onclick="startGame()">Start Adventure</button>
+            `;
+        }
+
+        function gameLoopFn() {
+            if (gameState !== 'playing') return;
+
+            // Update Player
+            if (keys.left && player.x > 0) player.x -= player.speed;
+            if (keys.right && player.x < canvas.width - player.width) player.x += player.speed;
+            if (keys.up && player.y > 0) player.y -= player.speed;
+            if (keys.down && player.y < canvas.height - player.height) player.y += player.speed;
+
+            // Update Enemies
+            enemies.forEach(enemy => {
+                if (enemy.direction === 'horizontal') {
+                    enemy.x += enemy.speed;
+                    if (enemy.x <= 0 || enemy.x >= canvas.width - enemy.width) enemy.speed *= -1;
+                } else if (enemy.direction === 'vertical') {
+                    enemy.y += enemy.speed;
+                    if (enemy.y <= 0 || enemy.y >= canvas.height - enemy.height) enemy.speed *= -1;
+                }
+                if (checkCollision(player, enemy)) {
+                    player.health -= 10;
+                    enemies.splice(enemies.indexOf(enemy), 1);
+                    score += 10;
+                    playSound(220);
+                    createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#ff0000', 8);
+                }
+            });
+
+            // Update Boss
+            if (boss) {
+                const dx = player.x - boss.x;
+                const dy = player.y - boss.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance > 0) {
+                    boss.x += (dx / distance) * boss.speed;
+                    boss.y += (dy / distance) * boss.speed;
+                }
+                if (checkCollision(player, boss)) {
+                    player.health -= 15;
+                    playSound(110);
+                    createParticles(boss.x + boss.width / 2, boss.y + boss.height / 2, '#800080', 10);
+                }
+            }
+
+            // Update Obstacles
+            obstacles.forEach(obstacle => {
+                if (checkCollision(player, obstacle)) {
+                    player.health -= obstacle.damage || 20;
+                    player.x -= 10;
+                    playSound(110);
+                    createParticles(player.x + player.width / 2, player.y + player.height / 2, '#ffffff', 5);
+                }
+            });
+
+            // Check Goal
+            if (goal && checkCollision(player, goal)) {
+                score += 50;
+                level++;
+                if (level > 7) {
+                    endGame(true);
+                    return;
+                }
+                initLevel();
+                playSound(880);
+                createParticles(goal.x + goal.width / 2, goal.y + goal.height / 2, '#00ffff', 15);
+            }
+
+            // Check Game Over
+            if (player.health <= 0) {
+                lives--;
+                player.health = 100;
+                if (lives <= 0) {
+                    endGame(false);
+                } else {
+                    initLevel();
+                }
+            }
+
+            // Update Particles
+            updateParticles();
+
+            // Draw
+            drawBackground();
+            drawPlayer();
+            drawEnemies();
+            drawBoss();
+            drawObstaclesAndGoal();
+            drawParticles();
+            drawHUD();
+
+            requestAnimationFrame(gameLoopFn);
+        }
+
+        function checkCollision(obj1, obj2) {
+            return obj1.x < obj2.x + obj2.width &&
+                   obj1.x + obj1.width > obj2.x &&
+                   obj1.y < obj2.y + obj2.height &&
+                   obj1.y + obj1.height > obj2.y;
+        }
+
+        function pauseGame() {
+            if (gameState !== 'playing') return;
+            gameState = 'paused';
+            overlay.classList.add('show');
+            pauseMenu.style.display = 'block';
+            menuContent.style.display = 'none';
+            introContent.style.display = 'none';
+            gameOverMenu.style.display = 'none';
+            highScoresDiv.style.display = 'none';
+        }
+
+        function resumeGame() {
+            if (gameState !== 'paused') return;
+            gameState = 'playing';
+            overlay.classList.remove('show');
+            gameLoop = requestAnimationFrame(gameLoopFn);
+        }
+
+        function endGame(won) {
+            gameState = 'gameover';
+            overlay.classList.add('show');
+            gameOverMenu.style.display = 'block';
+            menuContent.style.display = 'none';
+            introContent.style.display = 'none';
+            pauseMenu.style.display = 'none';
+            highScoresDiv.style.display = 'none';
+            if (won) {
+                gameOverTitle.textContent = "Victory!";
+                gameOverMessage.textContent = "Marlin and Nemo are reunited!\nThey swim home together, safe at last!";
+            } else {
+                gameOverTitle.textContent = "Game Over";
+                gameOverMessage.textContent = "Marlin couldn't save Nemo in time...\nThe ocean was too dangerous.";
+            }
+            finalScoreSpan.textContent = score;
+            highScores.push({ name: playerName, score });
+            highScores.sort((a, b) => b.score - a.score);
+            highScores = highScores.slice(0, 10);
+            localStorage.setItem('highScores', JSON.stringify(highScores));
+        }
+
+        function restartGame() {
+            gameState = 'playing';
+            overlay.classList.remove('show');
+            score = 0;
+            lives = 3;
+            level = 1;
+            player.health = 100;
+            initLevel();
+            gameLoop = requestAnimationFrame(gameLoopFn);
+        }
+
+        function showHighScores() {
+            overlay.classList.add('show');
+            menuContent.style.display = 'none';
+            introContent.style.display = 'none';
+            pauseMenu.style.display = 'none';
+            gameOverMenu.style.display = 'none';
+            highScoresDiv.style.display = 'block';
+            highScoresDiv.innerHTML = '<h2>High Scores</h2>' + highScores.map((hs, i) => `${i + 1}. ${hs.name}: ${hs.score}`).join('<br>') + '<br><button onclick="backToMenu()">Back</button>';
+        }
+
+        function backToMenu() {
+            gameState = 'menu';
+            overlay.classList.add('show');
+            menuContent.style.display = 'block';
+            introContent.style.display = 'none';
+            pauseMenu.style.display = 'none';
+            gameOverMenu.style.display = 'none';
+            highScoresDiv.style.display = 'none';
+        }
+
+        function drawHUD() {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px "Press Start 2P"';
+            ctx.fillText(`Score: ${score}`, 10, 30);
+            ctx.fillText(`Lives: ${lives}`, 10, 50);
+            ctx.fillText(`Health: ${player.health}`, 10, 70);
+            ctx.fillText(`Level: ${level}`, 10, 90);
+        }
+
+        // Initial State
+        overlay.classList.add('show');
+    </script>
+</body>
+</html>

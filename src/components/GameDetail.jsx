@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import SandboxIframe from './SandboxIframe';
 
-function CollapsibleSection({ title, description, children, isOpen, defaultOpen = false, onToggle }) {
+function CollapsibleSection({
+  title,
+  description,
+  children,
+  isOpen,
+  defaultOpen = false,
+  onToggle,
+}) {
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const isControlled = typeof isOpen === 'boolean';
   const open = isControlled ? isOpen : internalOpen;
@@ -106,7 +113,7 @@ export default function GameDetail({ game }) {
   const twitterMax = 240; // keep overall tweet (text + url) under 250 characters
   const twitterText = truncate(
     `Play "${game.name}" · ${game.genre || 'AI Game'} · ${game.model || 'AI Model'} — ${summary}`,
-    twitterMax,
+    twitterMax
   );
   const facebookQuote = truncate(`${game.name} — ${summary}`, 200);
   const linkedinTitle = `Play "${game.name}" on AI One-File Arcade`;
@@ -116,10 +123,10 @@ export default function GameDetail({ game }) {
   const shareLinks = {
     twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}&url=${encodedUrl}`,
     linkedin: `https://www.linkedin.com/shareArticle?mini=true&url=${encodedUrl}&title=${encodeURIComponent(
-      linkedinTitle,
+      linkedinTitle
     )}&summary=${encodeURIComponent(linkedinSummary)}`,
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodeURIComponent(
-      facebookQuote,
+      facebookQuote
     )}`,
   };
 
@@ -144,7 +151,7 @@ export default function GameDetail({ game }) {
     const body = encodeURIComponent(
       `Hey there,\n\nI found an AI-generated game called "${game.name}" on AI One-File Arcade and thought you'd enjoy it. It's a ${
         game.genre || 'fun'
-      } vibe built with ${game.model || 'an AI model'}.\n\nGive it a try: ${shareUrl}\n\nLet me know what you think!`,
+      } vibe built with ${game.model || 'an AI model'}.\n\nGive it a try: ${shareUrl}\n\nLet me know what you think!`
     );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
@@ -183,30 +190,58 @@ export default function GameDetail({ game }) {
     setShareMenuOpen(false);
   };
 
+  const thumbnailSrc = game.thumbnail || '/default-thumbnail.png';
+  const handleThumbnailError = (event) => {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src = '/default-thumbnail.png';
+  };
+
   return (
     <div className="space-y-6">
       <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg">
+        <div className="relative h-64 w-full overflow-hidden border-b border-gray-100 bg-gray-100">
+          <img
+            src={thumbnailSrc}
+            alt={`${game.name} thumbnail`}
+            onError={handleThumbnailError}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 via-gray-900/10 to-transparent" />
+        </div>
         <div className="border-b border-gray-100 px-6 py-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm uppercase tracking-wide text-gray-500">Now playing</p>
               <h1 className="text-3xl font-bold text-gray-900">{game.name}</h1>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 bg-primary-lighter text-primary-dark rounded-full text-sm font-medium">
-                {game.genre}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-3 py-1 bg-primary-lighter text-primary-dark rounded-full text-sm font-medium">
+              {game.genre}
+            </span>
+            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+              {game.difficulty}
+            </span>
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+              {game.model}
+            </span>
+            {typeof game.is_one_shot === 'boolean' && (
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  game.is_one_shot
+                    ? 'bg-purple-100 text-purple-800'
+                    : 'bg-orange-100 text-orange-800'
+                }`}
+              >
+                {game.is_one_shot ? 'One-shot prompt' : 'Iterated build'}
               </span>
-              <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                {game.difficulty}
+            )}
+            {game.hasPrompt && (
+              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                ✓ Prompt Available
               </span>
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                {game.model}
-              </span>
-              {game.hasPrompt && (
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                  ✓ Prompt Available
-                </span>
-              )}
+            )}
               <div className="relative">
                 <button
                   type="button"
@@ -214,7 +249,12 @@ export default function GameDetail({ game }) {
                   className="flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:border-primary hover:text-primary"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12v6a2 2 0 002 2h12a2 2 0 002-2v-6M16 6l-4-4m0 0L8 6m4-4v12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 12v6a2 2 0 002 2h12a2 2 0 002-2v-6M16 6l-4-4m0 0L8 6m4-4v12"
+                    />
                   </svg>
                   <span>Share</span>
                   <svg
@@ -223,7 +263,12 @@ export default function GameDetail({ game }) {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
                 {shareMenuOpen && (
@@ -300,30 +345,51 @@ export default function GameDetail({ game }) {
         )}
 
         {(game.author || game.duration || game.controls || game.version) && (
-          <CollapsibleSection title="Game details" description="Author, duration, controls, and version">
+          <CollapsibleSection
+            title="Game details"
+            description="Author, duration, controls, and version"
+          >
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {game.author && (
                 <div className="rounded-xl bg-gray-50 p-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Author</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                    Author
+                  </h3>
                   <p className="text-gray-900">{game.author.name}</p>
                 </div>
               )}
               {game.duration && (
                 <div className="rounded-xl bg-gray-50 p-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Duration</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                    Duration
+                  </h3>
                   <p className="text-gray-900">{game.duration}</p>
                 </div>
               )}
               {game.controls && (
                 <div className="rounded-xl bg-gray-50 p-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Controls</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                    Controls
+                  </h3>
                   <p className="text-gray-900 text-sm">{game.controls.instructions}</p>
                 </div>
               )}
               {game.version && (
                 <div className="rounded-xl bg-gray-50 p-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Version</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                    Version
+                  </h3>
                   <p className="text-gray-900">{game.version}</p>
+                </div>
+              )}
+              {typeof game.is_one_shot === 'boolean' && (
+                <div className="rounded-xl bg-gray-50 p-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                    Prompt style
+                  </h3>
+                  <p className="text-gray-900">
+                    {game.is_one_shot ? 'Single prompt (one-shot)' : 'Iterated or multi-prompt build'}
+                  </p>
                 </div>
               )}
             </div>
@@ -336,11 +402,7 @@ export default function GameDetail({ game }) {
           isOpen={showPrompt}
           onToggle={handlePromptToggle}
         >
-          {loadingPrompt && (
-            <div className="text-sm text-gray-500">
-              Loading prompt...
-            </div>
-          )}
+          {loadingPrompt && <div className="text-sm text-gray-500">Loading prompt...</div>}
           {showPrompt && !loadingPrompt && (
             <pre className="whitespace-pre-wrap font-mono text-sm text-gray-800 bg-gray-50 p-4 rounded-lg border overflow-x-auto">
               {promptContent}

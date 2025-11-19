@@ -1,0 +1,19 @@
+{
+  "name": "STAR FIGHTER: ULTIMATE DOGFIGHT",
+  "description": "Add a concise 1-2 sentence description of the game.",
+  "model": "unknown-model",
+  "version": "1.0.0",
+  "author": {
+    "name": "",
+    "url": ""
+  },
+  "tags": [],
+  "genre": "Arcade",
+  "difficulty": "Medium",
+  "controls": {
+    "type": "keyboard",
+    "instructions": "Describe keyboard/mouse/touch controls here."
+  },
+  "duration": "5-10 minutes",
+  "dateAdded": "2025-11-19"
+}

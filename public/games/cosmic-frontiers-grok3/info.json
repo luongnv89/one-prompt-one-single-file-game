@@ -1,0 +1,19 @@
+{
+  "name": "Cosmic Frontiers 3D",
+  "description": "Add a concise 1-2 sentence description of the game.",
+  "model": "grok3",
+  "version": "1.0.0",
+  "author": {
+    "name": "Luong NGUYEN",
+    "url": ""
+  },
+  "tags": ["space", "adventure"],
+  "genre": "Arcade",
+  "difficulty": "Medium",
+  "controls": {
+    "type": "keyboard",
+    "instructions": "Describe keyboard/mouse/touch controls here."
+  },
+  "duration": "5-10 minutes",
+  "dateAdded": "2025-11-19"
+}

@@ -6,6 +6,8 @@
       "description": "The classic Pong game with smooth controls and AI opponent. Use W and S keys to move your paddle and compete against the computer.",
       "model": "GPT-4o",
       "path": "/games/classic-pong/index.html",
+      "thumbnail": "/games/classic-pong/thumbnail.png",
+      "is_one_shot": true,
       "hasPrompt": true,
       "version": "1.0.0",
       "author": {
@@ -29,11 +31,121 @@
       "dateAdded": "2025-11-19"
     },
     {
+      "slug": "cosmic-frontiers-gemini3",
+      "name": "Cosmic Frontiers: The Chronos Engine",
+      "description": "Add a concise 1-2 sentence description of the game.",
+      "model": "gemini3",
+      "path": "/games/cosmic-frontiers-gemini3/index.html",
+      "thumbnail": "/games/cosmic-frontiers-gemini3/thumbnail.png",
+      "is_one_shot": true,
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "Luong NGUYEN",
+        "url": ""
+      },
+      "tags": [
+        "space",
+        "adventure"
+      ],
+      "genre": "Arcade",
+      "difficulty": "Medium",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Describe keyboard/mouse/touch controls here."
+      },
+      "duration": "5-10 minutes",
+      "dateAdded": "2025-11-19"
+    },
+    {
+      "slug": "cosmic-frontiers-grok3",
+      "name": "Cosmic Frontiers 3D",
+      "description": "Add a concise 1-2 sentence description of the game.",
+      "model": "grok3",
+      "path": "/games/cosmic-frontiers-grok3/index.html",
+      "thumbnail": "/games/cosmic-frontiers-grok3/thumbnail.png",
+      "is_one_shot": true,
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "Luong NGUYEN",
+        "url": ""
+      },
+      "tags": [
+        "space",
+        "adventure"
+      ],
+      "genre": "Arcade",
+      "difficulty": "Medium",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Describe keyboard/mouse/touch controls here."
+      },
+      "duration": "5-10 minutes",
+      "dateAdded": "2025-11-19"
+    },
+    {
+      "slug": "finding-nemo-gemini3",
+      "name": "Finding Nemo: Ocean Quest",
+      "description": "Add a concise 1-2 sentence description of the game.",
+      "model": "gemini3",
+      "path": "/games/finding-nemo-gemini3/index.html",
+      "thumbnail": "/games/finding-nemo-gemini3/thumbnail.png",
+      "is_one_shot": true,
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "Luong NGUYEN",
+        "url": ""
+      },
+      "tags": [
+        "ocean",
+        "adventure"
+      ],
+      "genre": "Arcade",
+      "difficulty": "Medium",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Describe keyboard/mouse/touch controls here."
+      },
+      "duration": "5-10 minutes",
+      "dateAdded": "2025-11-19"
+    },
+    {
+      "slug": "finding-nemo-grok",
+      "name": "Finding Nemo: Ocean Quest",
+      "description": "Add a concise 1-2 sentence description of the game.",
+      "model": "grok3",
+      "path": "/games/finding-nemo-grok/index.html",
+      "thumbnail": "/games/finding-nemo-grok/thumbnail.png",
+      "is_one_shot": true,
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "Luong NGUYEN",
+        "url": ""
+      },
+      "tags": [
+        "ocean",
+        "adventure"
+      ],
+      "genre": "Arcade",
+      "difficulty": "Medium",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Describe keyboard/mouse/touch controls here."
+      },
+      "duration": "5-10 minutes",
+      "dateAdded": "2025-11-19"
+    },
+    {
       "slug": "memory-game",
       "name": "Memory Match Game",
       "description": "Test your memory with this fun card-matching game. Flip cards to find matching pairs of cute animal emojis. Multiple difficulty levels available!",
       "model": "Llama 3.1",
       "path": "/games/memory-game/index.html",
+      "thumbnail": "/games/memory-game/thumbnail.png",
+      "is_one_shot": true,
       "hasPrompt": true,
       "version": "1.0.0",
       "author": {
@@ -57,58 +169,107 @@
       "dateAdded": "2025-11-19"
     },
     {
-      "slug": "sample-game",
-      "name": "Click the Squares",
-      "description": "A simple arcade-style game where you click on red squares as they appear. A demonstration of AI-generated single-file game development.",
-      "model": "GPT-4o",
-      "path": "/games/sample-game/index.html",
+      "slug": "sky-fight-gemini3",
+      "name": "Sky Fight 2D Retro",
+      "description": "Add a concise 1-2 sentence description of the game.",
+      "model": "gemini3",
+      "path": "/games/sky-fight-gemini3/index.html",
+      "thumbnail": "/games/sky-fight-gemini3/thumbnail.png",
+      "is_one_shot": true,
       "hasPrompt": true,
       "version": "1.0.0",
       "author": {
-        "name": "AI Assistant",
-        "url": null
+        "name": "Luong NGUYEN",
+        "url": ""
       },
       "tags": [
-        "arcade",
-        "clicker",
-        "simple",
-        "beginner"
+        "sky",
+        "fight",
+        "arcade"
       ],
       "genre": "Arcade",
-      "difficulty": "Easy",
-      "controls": {
-        "type": "mouse",
-        "instructions": "Click on the red squares to score points"
-      },
-      "duration": "5-10 minutes",
-      "dateAdded": "2025-11-18"
-    },
-    {
-      "slug": "snake-game",
-      "name": "Snake Game",
-      "description": "The classic Snake game with high score tracking. Control the green snake with arrow keys, eat red food to grow longer, and avoid hitting walls or yourself.",
-      "model": "Claude 3.5 Sonnet",
-      "path": "/games/snake-game/index.html",
-      "hasPrompt": true,
-      "version": "1.0.0",
-      "author": {
-        "name": "AI Assistant",
-        "url": null
-      },
-      "tags": [
-        "classic",
-        "snake",
-        "arcade",
-        "retro",
-        "puzzle"
-      ],
-      "genre": "Arcade",
-      "difficulty": "Easy",
+      "difficulty": "Medium",
       "controls": {
         "type": "keyboard",
-        "instructions": "Use arrow keys to control the snake's direction"
+        "instructions": "Describe keyboard/mouse/touch controls here."
       },
-      "duration": "10-20 minutes",
+      "duration": "5-10 minutes",
+      "dateAdded": "2025-11-19"
+    },
+    {
+      "slug": "sky-fight-grok3",
+      "name": "Sky Fight 2D Retro",
+      "description": "Add a concise 1-2 sentence description of the game.",
+      "model": "unknown-model",
+      "path": "/games/sky-fight-grok3/index.html",
+      "thumbnail": "/games/sky-fight-grok3/thumbnail.png",
+      "is_one_shot": true,
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "",
+        "url": ""
+      },
+      "tags": [],
+      "genre": "Arcade",
+      "difficulty": "Medium",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Describe keyboard/mouse/touch controls here."
+      },
+      "duration": "5-10 minutes",
+      "dateAdded": "2025-11-19"
+    },
+    {
+      "slug": "snake-gemini3",
+      "name": "Retro Snake - Full Screen",
+      "description": "Add a concise 1-2 sentence description of the game.",
+      "model": "gemini3",
+      "path": "/games/snake-gemini3/index.html",
+      "thumbnail": "/games/snake-gemini3/thumbnail.png",
+      "is_one_shot": true,
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "Luong NGUYEN",
+        "url": ""
+      },
+      "tags": [
+        "retro",
+        "snake",
+        "arcade"
+      ],
+      "genre": "Arcade",
+      "difficulty": "Medium",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Describe keyboard/mouse/touch controls here."
+      },
+      "duration": "5-10 minutes",
+      "dateAdded": "2025-11-19"
+    },
+    {
+      "slug": "snake-grok3",
+      "name": "Snake Game",
+      "description": "Add a concise 1-2 sentence description of the game.",
+      "model": "unknown-model",
+      "path": "/games/snake-grok3/index.html",
+      "thumbnail": "/games/snake-grok3/thumbnail.png",
+      "is_one_shot": true,
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "",
+        "url": ""
+      },
+      "tags": [],
+      "genre": "Arcade",
+      "difficulty": "Medium",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Describe keyboard/mouse/touch controls here."
+      },
+      "duration": "5-10 minutes",
       "dateAdded": "2025-11-19"
     },
     {
@@ -117,6 +278,8 @@
       "description": "Classic Space Invaders game. Control your spaceship, shoot at invading aliens, and defend Earth. Destroy all invaders to win!",
       "model": "GPT-4o",
       "path": "/games/space-invaders/index.html",
+      "thumbnail": "/games/space-invaders/thumbnail.png",
+      "is_one_shot": true,
       "hasPrompt": true,
       "version": "1.0.0",
       "author": {
@@ -138,8 +301,56 @@
       },
       "duration": "10-30 minutes",
       "dateAdded": "2025-11-19"
+    },
+    {
+      "slug": "star-fighter-gemini3",
+      "name": "SKY FIGHT: ULTIMATE DOGFIGHT",
+      "description": "Add a concise 1-2 sentence description of the game.",
+      "model": "unknown-model",
+      "path": "/games/star-fighter-gemini3/index.html",
+      "thumbnail": "/games/star-fighter-gemini3/thumbnail.png",
+      "is_one_shot": true,
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "",
+        "url": ""
+      },
+      "tags": [],
+      "genre": "Arcade",
+      "difficulty": "Medium",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Describe keyboard/mouse/touch controls here."
+      },
+      "duration": "5-10 minutes",
+      "dateAdded": "2025-11-19"
+    },
+    {
+      "slug": "star-fighter-grok3",
+      "name": "STAR FIGHTER: ULTIMATE DOGFIGHT",
+      "description": "Add a concise 1-2 sentence description of the game.",
+      "model": "unknown-model",
+      "path": "/games/star-fighter-grok3/index.html",
+      "thumbnail": "/games/star-fighter-grok3/thumbnail.png",
+      "is_one_shot": true,
+      "hasPrompt": true,
+      "version": "1.0.0",
+      "author": {
+        "name": "",
+        "url": ""
+      },
+      "tags": [],
+      "genre": "Arcade",
+      "difficulty": "Medium",
+      "controls": {
+        "type": "keyboard",
+        "instructions": "Describe keyboard/mouse/touch controls here."
+      },
+      "duration": "5-10 minutes",
+      "dateAdded": "2025-11-19"
     }
   ],
-  "generatedAt": "2025-11-19T08:55:55.097Z",
-  "count": 5
+  "generatedAt": "2025-11-19T22:28:37.721Z",
+  "count": 13
 }

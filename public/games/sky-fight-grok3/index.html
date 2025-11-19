@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sky Fight 2D Retro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #333;
+            overflow: hidden;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #gameContainer {
+            text-align: center;
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+            display: none;
+        }
+        canvas {
+            border: 1px solid black;
+            background: #87CEEB;
+            width: 100%;
+            height: 80vh;
+            max-width: 800px;
+            max-height: 600px;
+            display: block;
+        }
+        #score {
+            font-size: clamp(12px, 2vw, 16px);
+            color: white;
+            margin-bottom: 1vh;
+        }
+        #startScreen, #pauseScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #startScreen {
+            display: flex;
+        }
+        #pauseScreen, #gameOverScreen {
+            display: none;
+        }
+        #playerName {
+            padding: 5px;
+            font-size: 16px;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #startBtn, #restartBtn {
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #startBtn:hover, #restartBtn:hover {
+            background-color: #45a049;
+        }
+        #highScores {
+            margin-top: 20px;
+        }
+        #highScoreList {
+            list-style: none;
+            padding: 0;
+        }
+        #highScoreList li {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        #touchControls {
+            display: none;
+            position: absolute;
+            bottom: 5%;
+            left: 0;
+            right: 0;
+            justify-content: space-between;
+            padding: 0 5%;
+        }
+        .touchBtn {
+            width: 15vw;
+            height: 15vw;
+            max-width: 60px;
+            max-height: 60px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            border: 2px solid #000;
+            touch-action: none;
+        }
+        @media (max-width: 600px) {
+            #touchControls {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="startScreen">
+        <h1>Sky Fight 2D Retro</h1>
+        <input type="text" id="playerName" placeholder="Enter your name" />
+        <button id="startBtn">Start Game</button>
+        <div id="highScores">
+            <h2>High Scores</h2>
+            <ul id="highScoreList"></ul>
+        </div>
+    </div>
+    <div id="gameContainer">
+        <div id="score">Score: 0 - Level: 1 - Health: 3 - Rockets: 5 - Boomshell: 1</div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="touchControls">
+            <div id="leftBtn" class="touchBtn"></div>
+            <div id="rightBtn" class="touchBtn"></div>
+            <div id="rocketBtn" class="touchBtn"></div>
+            <div id="boomBtn" class="touchBtn"></div>
+        </div>
+    </div>
+    <div id="pauseScreen">
+        <h1>Paused</h1>
+        <p>Press 'P' to resume</p>
+    </div>
+    <div id="gameOverScreen">
+        <h1>Game Over!</h1>
+        <p id="finalScore"></p>
+        <button id="restartBtn">Play Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const startScreen = document.getElementById('startScreen');
+        const gameContainer = document.getElementById('gameContainer');
+        const pauseScreen = document.getElementById('pauseScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const touchControls = document.getElementById('touchControls');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const rocketBtn = document.getElementById('rocketBtn');
+        const boomBtn = document.getElementById('boomBtn');
+
+        canvas.width = Math.min(800, window.innerWidth * 0.95);
+        canvas.height = Math.min(600, window.innerHeight * 0.8);
+
+        let player = {
+            x: canvas.width / 2,
+            y: canvas.height - 50,
+            width: 30,
+            height: 20,
+            baseSpeed: 5,
+            speed: 5,
+            health: 3,
+            maxHealth: 5,
+            bullets: [],
+            rockets: [],
+            rocketsAvailable: 5,
+            boomshells: 1,
+            lastBulletTime: 0,
+            bulletStreams: 1,
+            speedBoostEndTime: 0
+        };
+        let enemies = [];
+        let powerUps = [];
+        let particles = [];
+        let score = 0;
+        let level = 1;
+        let gameOver = false;
+        let isPaused = false;
+        let lastRocketTime = Date.now();
+        let playerName = '';
+        let highScores = JSON.parse(localStorage.getItem('highScores')) || [];
+
+        const enemyTypes = [
+            { speed: 2, health: 1, points: 10, pattern: 'straight' },
+            { speed: 4, health: 1, points: 20, pattern: 'straight' },
+            { speed: 1, health: 3, points: 30, pattern: 'straight' },
+            { speed: 2, health: 2, points: 25, pattern: 'zigzag' }
+        ];
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(frequency, duration, volume = 0.1) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequency;
+            gainNode.gain.value = volume;
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        const keys = {
+            ArrowLeft: false,
+            ArrowRight: false,
+            ArrowUp: false,
+            ArrowDown: false,
+            Space: false,
+            KeyA: false,
+            KeyP: false
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code in keys) {
+                keys[e.code] = true;
+                if (e.code === 'Space' && !gameOver && !isPaused && player.rocketsAvailable > 0) shootRocket();
+                if (e.code === 'KeyA' && !gameOver && !isPaused && player.boomshells > 0) useBoomshell();
+                if (e.code === 'KeyP' && !gameOver) {
+                    isPaused = !isPaused;
+                    pauseScreen.style.display = isPaused ? 'flex' : 'none';
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code in keys) keys[e.code] = false;
+        });
+
+        leftBtn.addEventListener('touchstart', () => keys.ArrowLeft = true);
+        leftBtn.addEventListener('touchend', () => keys.ArrowLeft = false);
+        rightBtn.addEventListener('touchstart', () => keys.ArrowRight = true);
+        rightBtn.addEventListener('touchend', () => keys.ArrowRight = false);
+        rocketBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameOver && !isPaused && player.rocketsAvailable > 0) shootRocket();
+        });
+        boomBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameOver && !isPaused && player.boomshells > 0) useBoomshell();
+        });
+
+        function shootBullet() {
+            const streamCount = player.bulletStreams;
+            const spacing = 10;
+            const startX = player.x + player.width / 2 - (streamCount - 1) * spacing / 2;
+            for (let i = 0; i < streamCount; i++) {
+                player.bullets.push({
+                    x: startX + i * spacing,
+                    y: player.y,
+                    width: 4,
+                    height: 10,
+                    speed: 7
+                });
+            }
+            playSound(800, 0.1, 0.05);
+        }
+
+        function shootRocket() {
+            player.rockets.push({
+                x: player.x + player.width / 2 - 5,
+                y: player.y,
+                width: 10,
+                height: 20,
+                speed: 9
+            });
+            player.rocketsAvailable--;
+            updateDisplay();
+            playSound(200, 0.3, 0.1);
+        }
+
+        function useBoomshell() {
+            enemies = [];
+            player.boomshells--;
+            updateDisplay();
+            playSound(100, 0.5, 0.15);
+        }
+
+        function spawnEnemy() {
+            const typeIndex = Math.min(Math.floor(level / 2), enemyTypes.length - 1);
+            const type = enemyTypes[Math.random() < 0.5 ? 0 : typeIndex];
+            enemies.push({
+                x: Math.random() * (canvas.width - 40),
+                y: -40,
+                width: 40,
+                height: 40,
+                speed: type.speed,
+                health: type.health + Math.floor(level / 2),
+                maxHealth: type.health + Math.floor(level / 2),
+                points: type.points,
+                pattern: type.pattern,
+                direction: Math.random() < 0.5 ? 1 : -1
+            });
+        }
+
+        function spawnPowerUp(x, y) {
+            if (Math.random() < 0.1) {
+                const powerUpType = ['health', 'rocket', 'boomshell', 'speed'][Math.floor(Math.random() * 4)];
+                powerUps.push({
+                    x: x,
+                    y: y,
+                    width: 20,
+                    height: 20,
+                    speed: 2,
+                    type: powerUpType
+                });
+            }
+        }
+
+        function createExplosion(x, y, isBig) {
+            const particleCount = isBig ? 20 : 10;
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    radius: Math.random() * 5 + 2,
+                    speedX: (Math.random() - 0.5) * 4,
+                    speedY: (Math.random() - 0.5) * 4,
+                    life: 1.0,
+                    color: `hsl(${Math.random() * 60 + 10}, 100%, 50%)`
+                });
+            }
+            playSound(300, 0.2, 0.1);
+        }
+
+        function drawPlayer() {
+            ctx.fillStyle = '#00FF00';
+            ctx.beginPath();
+            ctx.moveTo(player.x, player.y + player.height);
+            ctx.lineTo(player.x + player.width / 2, player.y);
+            ctx.lineTo(player.x + player.width, player.y + player.height);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawBullets() {
+            ctx.fillStyle = '#FF4500';
+            player.bullets.forEach(bullet => {
+                ctx.fillRect(bullet.x - bullet.width / 2, bullet.y, bullet.width, bullet.height);
+            });
+        }
+
+        function drawRockets() {
+            ctx.fillStyle = '#FFD700';
+            player.rockets.forEach(rocket => {
+                ctx.fillRect(rocket.x - rocket.width / 2, rocket.y, rocket.width, rocket.height);
+            });
+        }
+
+        function drawEnemies() {
+            enemies.forEach(enemy => {
+                ctx.fillStyle = enemy.health > 1 ? '#CD5C5C' : '#8B0000';
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                const healthWidth = 30 * (enemy.health / enemy.maxHealth);
+                ctx.fillStyle = 'green';
+                ctx.fillRect(enemy.x + 5, enemy.y - 10, healthWidth, 5);
+            });
+        }
+
+        function drawPowerUps() {
+            powerUps.forEach(powerUp => {
+                ctx.fillStyle = getPowerUpColor(powerUp.type);
+                ctx.fillRect(powerUp.x, powerUp.y, powerUp.width, powerUp.height);
+            });
+        }
+
+        function getPowerUpColor(type) {
+            switch (type) {
+                case 'health': return 'green';
+                case 'rocket': return 'yellow';
+                case 'boomshell': return 'red';
+                case 'speed': return 'blue';
+                default: return 'white';
+            }
+        }
+
+        function drawParticles() {
+            particles.forEach((particle, index) => {
+                ctx.fillStyle = particle.color;
+                ctx.globalAlpha = particle.life;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                ctx.fill();
+                particle.x += particle.speedX;
+                particle.y += particle.speedY;
+                particle.life -= 0.05;
+                particle.radius += 0.2;
+                if (particle.life <= 0) particles.splice(index, 1);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function update() {
+            if (gameOver || isPaused) return;
+
+            if (keys.ArrowLeft && player.x > 0) player.x -= player.speed;
+            if (keys.ArrowRight && player.x < canvas.width - player.width) player.x += player.speed;
+            if (keys.ArrowUp) player.speed = Math.min(player.baseSpeed * 2, player.speed + 0.1);
+            if (keys.ArrowDown) player.speed = Math.max(1, player.speed - 0.1);
+            if (!keys.ArrowUp && !keys.ArrowDown && Date.now() > player.speedBoostEndTime) player.speed = player.baseSpeed;
+            if (Date.now() > player.speedBoostEndTime && player.speed > player.baseSpeed) player.speed = player.baseSpeed;
+
+            const currentTime = Date.now();
+            if (currentTime - player.lastBulletTime >= 200) {
+                shootBullet();
+                player.lastBulletTime = currentTime;
+            }
+
+            player.bullets.forEach((bullet, index) => {
+                bullet.y -= bullet.speed;
+                if (bullet.y < 0) player.bullets.splice(index, 1);
+            });
+
+            player.rockets.forEach((rocket, index) => {
+                rocket.y -= rocket.speed;
+                if (rocket.y < 0) player.rockets.splice(index, 1);
+            });
+
+            if (currentTime - lastRocketTime >= 30000 && player.rocketsAvailable < 5) {
+                player.rocketsAvailable = 5;
+                lastRocketTime = currentTime;
+                updateDisplay();
+            }
+
+            enemies.forEach((enemy, eIndex) => {
+                if (enemy.pattern === 'zigzag') {
+                    enemy.x += enemy.speed * enemy.direction;
+                    if (enemy.x < 0 || enemy.x > canvas.width - enemy.width) enemy.direction *= -1;
+                }
+                enemy.y += enemy.speed;
+                if (enemy.y > canvas.height) enemies.splice(eIndex, 1);
+
+                player.bullets.forEach((bullet, bIndex) => {
+                    if (bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y) {
+                        enemy.health--;
+                        player.bullets.splice(bIndex, 1);
+                        if (enemy.health <= 0) {
+                            createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.isBig);
+                            spawnPowerUp(enemy.x, enemy.y);
+                            enemies.splice(eIndex, 1);
+                            score += enemy.points;
+                            updateLevel();
+                        }
+                    }
+                });
+
+                player.rockets.forEach((rocket, rIndex) => {
+                    if (rocket.x < enemy.x + enemy.width &&
+                        rocket.x + rocket.width > enemy.x &&
+                        rocket.y < enemy.y + enemy.height &&
+                        rocket.y + rocket.height > enemy.y) {
+                        enemy.health -= 3;
+                        player.rockets.splice(rIndex, 1);
+                        if (enemy.health <= 0) {
+                            createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.isBig);
+                            spawnPowerUp(enemy.x, enemy.y);
+                            enemies.splice(eIndex, 1);
+                            score += enemy.points;
+                            updateLevel();
+                        }
+                    }
+                });
+
+                if (player.x < enemy.x + enemy.width &&
+                    player.x + player.width > enemy.x &&
+                    player.y < enemy.y + enemy.height &&
+                    player.y + player.height > enemy.y) {
+                    player.health--;
+                    createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.isBig);
+                    enemies.splice(eIndex, 1);
+                    updateDisplay();
+                    if (player.health <= 0) handleGameOver();
+                }
+            });
+
+            powerUps.forEach((powerUp, pIndex) => {
+                powerUp.y += powerUp.speed;
+                if (powerUp.y > canvas.height) powerUps.splice(pIndex, 1);
+                if (player.x < powerUp.x + powerUp.width &&
+                    player.x + player.width > powerUp.x &&
+                    player.y < powerUp.y + powerUp.height &&
+                    player.y + player.height > powerUp.y) {
+                    if (powerUp.type === 'health' && player.health < player.maxHealth) player.health++;
+                    else if (powerUp.type === 'rocket') player.rocketsAvailable++;
+                    else if (powerUp.type === 'boomshell') player.boomshells++;
+                    else if (powerUp.type === 'speed') {
+                        player.speed = 10;
+                        player.speedBoostEndTime = Date.now() + 10000;
+                    }
+                    powerUps.splice(pIndex, 1);
+                    updateDisplay();
+                }
+            });
+
+            if (Math.random() < 0.02) spawnEnemy();
+        }
+
+        function updateLevel() {
+            let newLevel = 1;
+            if (score >= 450) newLevel = 4;
+            else if (score >= 250) newLevel = 3;
+            else if (score >= 100) newLevel = 2;
+            if (newLevel !== level) {
+                level = newLevel;
+                player.boomshells = 1;
+                player.bulletStreams = 1 + Math.floor(level / 2);
+            }
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            scoreDisplay.textContent = `Score: ${score} - Level: ${level} - Health: ${player.health} - Rockets: ${player.rocketsAvailable} - Boomshell: ${player.boomshells}`;
+        }
+
+        function handleGameOver() {
+            gameOver = true;
+            gameContainer.style.display = 'none';
+            gameOverScreen.style.display = 'flex';
+            finalScoreDisplay.textContent = `Your score: ${score}`;
+            if (highScores.length < 10 || score > highScores[highScores.length - 1].score) {
+                highScores.push({ name: playerName, score: score });
+                highScores.sort((a, b) => b.score - a.score);
+                if (highScores.length > 10) highScores.pop();
+                localStorage.setItem('highScores', JSON.stringify(highScores));
+            }
+        }
+
+        function startGame(name) {
+            playerName = name;
+            player = {
+                x: canvas.width / 2,
+                y: canvas.height - 50,
+                width: 30,
+                height: 20,
+                baseSpeed: 5,
+                speed: 5,
+                health: 3,
+                maxHealth: 5,
+                bullets: [],
+                rockets: [],
+                rocketsAvailable: 5,
+                boomshells: 1,
+                lastBulletTime: 0,
+                bulletStreams: 1,
+                speedBoostEndTime: 0
+            };
+            enemies = [];
+            powerUps = [];
+            particles = [];
+            score = 0;
+            level = 1;
+            gameOver = false;
+            isPaused = false;
+            lastRocketTime = Date.now();
+            updateDisplay();
+            startScreen.style.display = 'none';
+            gameContainer.style.display = 'block';
+            gameLoop();
+        }
+
+        function displayHighScores() {
+            const list = document.getElementById('highScoreList');
+            list.innerHTML = '';
+            highScores.sort((a, b) => b.score - a.score).slice(0, 10).forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${index + 1}. ${entry.name}: ${entry.score}`;
+                list.appendChild(li);
+            });
+        }
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            const name = document.getElementById('playerName').value.trim();
+            if (name) startGame(name);
+            else alert('Please enter your name');
+        });
+
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+            displayHighScores();
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = Math.min(800, window.innerWidth * 0.95);
+            canvas.height = Math.min(600, window.innerHeight * 0.8);
+            player.x = Math.min(player.x, canvas.width - player.width);
+            player.y = canvas.height - 50;
+        });
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            update();
+            drawPlayer();
+            drawBullets();
+            drawRockets();
+            drawEnemies();
+            drawPowerUps();
+            drawParticles();
+            if (!gameOver) requestAnimationFrame(gameLoop);
+        }
+
+        displayHighScores();
+    </script>
+</body>
+</html>

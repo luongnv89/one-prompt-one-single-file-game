@@ -1,0 +1,19 @@
+{
+  "name": "Finding Nemo: Ocean Quest",
+  "description": "Add a concise 1-2 sentence description of the game.",
+  "model": "gemini3",
+  "version": "1.0.0",
+  "author": {
+    "name": "Luong NGUYEN",
+    "url": ""
+  },
+  "tags": ["ocean", "adventure"],
+  "genre": "Arcade",
+  "difficulty": "Medium",
+  "controls": {
+    "type": "keyboard",
+    "instructions": "Describe keyboard/mouse/touch controls here."
+  },
+  "duration": "5-10 minutes",
+  "dateAdded": "2025-11-19"
+}
