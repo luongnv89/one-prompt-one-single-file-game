@@ -5,6 +5,7 @@ import GameDetail from './pages/GameDetail';
 import Contribute from './pages/Contribute';
 import About from './pages/About';
 import NavBar from './components/NavBar';
+import ScrollContributionCTA from './components/ScrollContributionCTA';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
+        <ScrollContributionCTA />
       </div>
     </Router>
   );
