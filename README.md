@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="./public/logo.svg" alt="AI One-File Arcade logo" width="420" />
+
 ![AI One-File Arcade](https://img.shields.io/badge/AI-One--File--Arcade-green)
 ![React](https://img.shields.io/badge/React-19.2.0-blue)
 ![Vite](https://img.shields.io/badge/Vite-7.2.2-purple)
@@ -129,6 +131,10 @@ one-prompt-one-single-file-game/
 │   └── workflows/
 │       └── ci.yml          # GitHub Actions CI
 ├── devdocs/                # Documentation
+├── public/
+│   ├── logo.svg            # Full wordmark logo
+│   ├── logo-mark.svg       # Icon-only logo (also used for nav + favicon)
+│   └── favicon.svg         # Primary favicon served via index.html
 ├── CONTRIBUTING.md         # Contribution guidelines
 └── README.md
 ```
@@ -179,6 +185,7 @@ We welcome contributions! Please read:
 - [devdocs/todo-list.md](./devdocs/todo-list.md) - Sprint planning and task breakdown
 - [devdocs/prd.md](./devdocs/prd.md) - Product requirements document
 - [devdocs/brand_kit.md](./devdocs/brand_kit.md) - Brand guidelines
+- Brand assets live in `public/logo.svg`, `public/logo-mark.svg`, and `public/favicon.svg` for consistent usage across web, docs, and PWA surfaces.
 
 ### Game Requirements
 

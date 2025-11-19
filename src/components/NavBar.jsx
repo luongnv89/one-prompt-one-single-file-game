@@ -11,10 +11,14 @@ export default function NavBar() {
   return (
     <nav className="fixed inset-x-0 top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur">
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
-        <Link to="/" className="flex items-center gap-2 text-gray-900">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white font-bold">
-            AI
-          </div>
+        <Link to="/" className="flex items-center gap-3 text-gray-900">
+          <img
+            src="/logo-mark.svg"
+            alt="AI One-File Arcade logo"
+            className="h-12 w-12"
+            loading="lazy"
+            decoding="async"
+          />
           <div className="leading-tight">
             <p className="text-sm uppercase tracking-wide text-gray-500">AI One-File</p>
             <p className="text-lg font-semibold">Arcade</p>

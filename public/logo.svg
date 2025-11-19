@@ -1,0 +1,17 @@
+<svg width="420" height="96" viewBox="0 0 420 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="brandTitle brandDesc">
+  <title id="brandTitle">AI One-File Arcade logo</title>
+  <desc id="brandDesc">Retro game screen icon with AI One-File Arcade wordmark</desc>
+  <g>
+    <rect x="6" y="6" width="72" height="72" rx="20" fill="#ECFDF5" stroke="#34D399" stroke-width="6"/>
+    <rect x="26" y="22" width="36" height="36" rx="10" fill="#34D399"/>
+    <rect x="58" y="54" width="12" height="12" rx="2" fill="#059669"/>
+    <circle cx="38" cy="56" r="6" fill="#0C0C0C" />
+    <rect x="24" y="42" width="24" height="7" rx="3.5" fill="#6EE7B7"/>
+  </g>
+  <text x="100" y="48" font-family="Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="700" fill="#111827">
+    AI One-File Arcade
+  </text>
+  <text x="100" y="72" font-family="Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="400" fill="#374151">
+    Security-first gallery of AI-built single-file games
+  </text>
+</svg>

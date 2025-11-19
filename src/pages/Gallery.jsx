@@ -150,6 +150,13 @@ export default function Gallery() {
           <div className="grid gap-10 md:grid-cols-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.4em] text-gray-500">AI One-File Arcade</p>
+              <img
+                src="/logo.svg"
+                alt="AI One-File Arcade logo"
+                className="mt-4 w-60 max-w-full sm:w-72"
+                loading="lazy"
+                decoding="async"
+              />
               <h1 className="mt-4 text-4xl font-bold leading-tight text-gray-900 sm:text-5xl">
                 One prompt. One file. A curated AI arcade.
               </h1>
