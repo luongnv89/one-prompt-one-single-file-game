@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 function extractGithubUsername(author) {
   if (!author?.url) return '';
-  const match = author.url.match(/github\\.com\\/(.+?)(?:\\/|$)/i);
+  const match = author.url.match(/github\.com\/([^/]+)(?:\/|$)/i);
   return match ? match[1] : '';
 }
 
