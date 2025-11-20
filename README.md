@@ -253,7 +253,7 @@ Every game must be:
 
 ## 🚢 Deployment (Netlify)
 
-- Build command: `npm run build`
+- Build command: `npm run generate:manifest && npm run build` (manifest auto-runs via `prebuild`)
 - Publish directory: `dist`
 - SPA routing: handled via `netlify.toml` (`/*` → `/index.html`)
 - Service worker: `public/sw.js` uses a network-first strategy for HTML/manifest to avoid stale shells; swaps caches automatically. If you ever see an old UI, hard-reload or unregister the PWA to pick up the latest build.
