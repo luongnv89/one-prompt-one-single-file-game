@@ -4,6 +4,7 @@ import Gallery from './pages/Gallery';
 import GameDetail from './pages/GameDetail';
 import Contribute from './pages/Contribute';
 import About from './pages/About';
+import Contributors from './pages/Contributors';
 import NavBar from './components/NavBar';
 import ScrollContributionCTA from './components/ScrollContributionCTA';
 
@@ -18,6 +19,7 @@ function App() {
             <Route path="/game/:slug" element={<GameDetail />} />
             <Route path="/about" element={<About />} />
             <Route path="/contribute" element={<Contribute />} />
+            <Route path="/contributors" element={<Contributors />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

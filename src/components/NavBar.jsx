@@ -6,6 +6,7 @@ export default function NavBar() {
     { label: 'Gallery', to: '/' },
     { label: 'About', to: '/about' },
     { label: 'Contribute', to: '/contribute' },
+    { label: 'Contributors', to: '/contributors' },
   ];
 
   return (
@@ -38,8 +39,14 @@ export default function NavBar() {
               </NavLink>
             ))}
           </div>
+          <Link
+            to="/contributors"
+            className="hidden sm:inline-flex rounded-full border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:border-primary-dark hover:text-primary-dark"
+          >
+            Contributors
+          </Link>
           <a
-            href="https://github.com/luongnv89/one-prompt-one-single-file-game"
+            href="https://github.com/luongnv89/ai-one-file-arcade"
             target="_blank"
             rel="noreferrer"
             className="rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-primary hover:text-primary"

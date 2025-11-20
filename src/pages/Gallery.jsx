@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import GameCard from '../components/GameCard';
 import Footer from '../components/Footer';
 import PWAInstallPrompt from '../components/PWAInstallPrompt';
@@ -11,6 +11,7 @@ import { trackSearch, trackFilterUsed, trackGamePlay } from '../services/analyti
  */
 export default function Gallery() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,10 +19,21 @@ export default function Gallery() {
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
+  const [selectedContributor, setSelectedContributor] = useState('');
 
   useEffect(() => {
     loadGames();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const contributor = params.get('contributor');
+    if (contributor) {
+      setSelectedContributor(contributor.toLowerCase());
+    } else {
+      setSelectedContributor('');
+    }
+  }, [location.search]);
 
   const loadGames = async () => {
     try {
@@ -53,15 +65,27 @@ export default function Gallery() {
 
   // Filter games based on search query and filters
   const filteredGames = useMemo(() => {
+    const normalize = (value) => (value ? value.toLowerCase() : '');
     return games.filter((game) => {
       // Search query filter
       const query = searchQuery.toLowerCase();
+      const name = normalize(game.name);
+      const description = normalize(game.description);
+      const model = normalize(game.model);
+      const genre = normalize(game.genre);
+      const authorName = normalize(game.author?.name);
+      const authorUrl = normalize(game.author?.url);
+      const authorUsername = authorUrl.startsWith('https://github.com/')
+        ? authorUrl.replace('https://github.com/', '').replace('/', '')
+        : '';
       const matchesSearch =
         !query.trim() ||
-        game.name.toLowerCase().includes(query) ||
-        game.description.toLowerCase().includes(query) ||
-        game.model.toLowerCase().includes(query) ||
-        game.genre.toLowerCase().includes(query) ||
+        name.includes(query) ||
+        description.includes(query) ||
+        model.includes(query) ||
+        genre.includes(query) ||
+        authorName.includes(query) ||
+        authorUsername.includes(query) ||
         (game.tags && game.tags.some((tag) => tag.toLowerCase().includes(query)));
 
       // Model filter
@@ -73,9 +97,21 @@ export default function Gallery() {
       // Difficulty filter
       const matchesDifficulty = !selectedDifficulty || game.difficulty === selectedDifficulty;
 
-      return matchesSearch && matchesModel && matchesGenre && matchesDifficulty;
+      const matchesContributor =
+        !selectedContributor ||
+        authorName === selectedContributor ||
+        authorUsername === selectedContributor ||
+        authorUrl === selectedContributor;
+
+      return (
+        matchesSearch &&
+        matchesModel &&
+        matchesGenre &&
+        matchesDifficulty &&
+        matchesContributor
+      );
     });
-  }, [games, searchQuery, selectedModel, selectedGenre, selectedDifficulty]);
+  }, [games, searchQuery, selectedModel, selectedGenre, selectedDifficulty, selectedContributor]);
 
   const handleClearSearch = () => {
     setSearchQuery('');
@@ -96,6 +132,7 @@ export default function Gallery() {
     setSelectedModel('');
     setSelectedGenre('');
     setSelectedDifficulty('');
+    setSelectedContributor('');
   };
 
   // Track filter usage
@@ -142,6 +179,12 @@ export default function Gallery() {
       genres: genres.size,
     };
   }, [games]);
+
+  const hasFilters =
+    Boolean(selectedModel) ||
+    Boolean(selectedGenre) ||
+    Boolean(selectedDifficulty) ||
+    Boolean(selectedContributor);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -279,7 +322,7 @@ export default function Gallery() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent shadow-sm"
-                    placeholder="Search games by name, description, model, or tags..."
+                    placeholder="Search games by name, description, model, tags, or contributor..."
                     aria-label="Search games"
                   />
                   {searchQuery && (
@@ -392,7 +435,23 @@ export default function Gallery() {
                     </button>
                   ))}
                 </div>
-                {(selectedModel || selectedGenre || selectedDifficulty) && (
+                {selectedContributor && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Contributor:
+                    </span>
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary-dark">
+                      {selectedContributor}
+                    </span>
+                    <button
+                      onClick={() => setSelectedContributor('')}
+                      className="text-sm text-gray-600 hover:text-gray-900 underline underline-offset-2"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+                {hasFilters && (
                   <div className="ml-auto">
                     <button
                       onClick={handleClearFilters}
@@ -410,14 +469,14 @@ export default function Gallery() {
                     Found <span className="font-semibold">{filteredGames.length}</span> of{' '}
                     <span className="font-semibold">{games.length}</span> game
                     {games.length !== 1 ? 's' : ''}
-                    {(searchQuery || selectedModel || selectedGenre || selectedDifficulty) && (
+                    {(searchQuery || hasFilters) && (
                       <span className="ml-1">
                         matching your criteria
                         {searchQuery && (
                           <span className="ml-1">
                             {searchQuery && <span>search"</span>}
                             <span className="font-medium">"{searchQuery}"</span>
-                            {selectedModel || selectedGenre || selectedDifficulty ? ',' : ''}
+                            {hasFilters ? ',' : ''}
                           </span>
                         )}
                         {selectedModel && (
@@ -432,16 +491,22 @@ export default function Gallery() {
                         {selectedGenre && (
                           <span className="ml-1">
                             <span className="font-medium">{selectedGenre}</span>
-                            {selectedDifficulty ? ',' : ''}
+                            {selectedDifficulty || selectedContributor ? ',' : ''}
                           </span>
                         )}
                         {selectedDifficulty && (
                           <span className="ml-1">
                             <span className="font-medium">{selectedDifficulty}</span>
+                            {selectedContributor ? ',' : ''}
+                          </span>
+                        )}
+                        {selectedContributor && (
+                          <span className="ml-1">
+                            <span className="font-medium">{selectedContributor}</span>
                           </span>
                         )}
                         <span className="ml-1">
-                          {selectedModel || selectedGenre || selectedDifficulty ? ')' : ''}
+                          {hasFilters ? ')' : ''}
                         </span>
                       </span>
                     )}
@@ -450,9 +515,8 @@ export default function Gallery() {
               </div>
             </div>
 
-            {filteredGames.length === 0 &&
-              (searchQuery || selectedModel || selectedGenre || selectedDifficulty) && (
-                <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+            {filteredGames.length === 0 && (searchQuery || hasFilters) && (
+              <div className="text-center py-12 bg-white rounded-lg shadow-sm">
                   <svg
                     className="mx-auto h-12 w-12 text-gray-400 mb-4"
                     fill="none"
